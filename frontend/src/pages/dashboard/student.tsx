@@ -1,17 +1,49 @@
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Layout } from '../../components/Layout';
 import { getAuth } from '../../lib/api';
 import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
+import { useAssignedSessions, useExamKeyJoin, useProctoringStatus, useUpcomingSessions } from '../../lib/hooks';
+import { openSecureClient } from '../../lib/launch';
+import { ExamSession } from '../../lib/types';
 
 export default function StudentDashboard() {
   const [authRole, setAuthRole] = useState<string | null>(null);
+  const [examKey, setExamKey] = useState('');
+  const [joinMessage, setJoinMessage] = useState<string | null>(null);
+  const { sessions: assignedSessions } = useAssignedSessions();
+  const { sessions: upcomingSessions } = useUpcomingSessions();
+  const { session, sessionToken, error: joinError, loading, validateKey } = useExamKeyJoin();
+
+  const activeSessionId = useMemo(() => session?.id ?? assignedSessions[0]?.id ?? null, [session?.id, assignedSessions]);
+  const { status: proctoringStatus, lastUpdatedLabel } = useProctoringStatus(activeSessionId);
 
   useEffect(() => {
     setAuthRole(getAuth()?.role ?? null);
   }, []);
+
+  const handleJoin = async () => {
+    if (!examKey.trim()) {
+      setJoinMessage('Enter an exam key to continue.');
+      return;
+    }
+    try {
+      const result = await validateKey(examKey.trim());
+      const launchUrl = openSecureClient(result.sessionToken, result.session);
+      setJoinMessage(`Launching secure client via ${launchUrl}`);
+    } catch (err: any) {
+      setJoinMessage(err?.message ?? 'Could not join exam');
+    }
+  };
+
+  const formatWindow = (examSession: ExamSession) => {
+    const windowStart = (examSession.exam as any)?.scheduling?.windowStart;
+    if (!windowStart) return 'No time set';
+    const startDate = new Date(windowStart);
+    return startDate.toLocaleString();
+  };
 
   return (
     <Layout title="Student Dashboard">
@@ -53,23 +85,32 @@ export default function StudentDashboard() {
       <section className="mt-6 grid gap-4 md:grid-cols-3">
         <Card className="p-4">
           <h3 className="text-lg font-semibold text-slate-900">Upcoming Exams</h3>
-          <div className="mt-2 flex justify-between text-sm text-slate-700">
-            <span>Cybersecurity Fundamentals</span>
-            <strong>Today · 5:00 PM</strong>
-          </div>
-          <div className="flex justify-between text-sm text-slate-700">
-            <span>Data Structures</span>
-            <strong>Tomorrow · 11:00 AM</strong>
-          </div>
-          <div className="flex justify-between text-sm text-slate-700">
-            <span>Design Thinking</span>
-            <strong>Dec 18 · 9:00 AM</strong>
+          <div className="mt-2 space-y-2 text-sm text-slate-700">
+            {upcomingSessions.length === 0 && <p className="text-slate-500">No upcoming sessions yet.</p>}
+            {upcomingSessions.map((ses) => (
+              <div key={ses.id} className="flex justify-between rounded-md bg-slate-50 px-2 py-1">
+                <span className="font-semibold text-slate-900">{ses.exam?.title ?? 'Untitled exam'}</span>
+                <strong>{formatWindow(ses)}</strong>
+              </div>
+            ))}
           </div>
         </Card>
         <Card className="p-4">
           <h3 className="text-lg font-semibold text-slate-900">Enter Exam Key</h3>
-          <Input placeholder="e.g., AE-4F9Q-2024" className="mt-2" />
-          <Button className="mt-3 w-full">Join Exam</Button>
+          <Input
+            placeholder="e.g., AE-4F9Q-2024"
+            className="mt-2"
+            value={examKey}
+            onChange={(e) => setExamKey(e.target.value)}
+          />
+          <Button className="mt-3 w-full" onClick={handleJoin} disabled={loading}>
+            {loading ? 'Validating...' : 'Join & Launch'}
+          </Button>
+          {joinMessage && <p className="text-sm text-slate-600">{joinMessage}</p>}
+          {joinError && <p className="text-sm text-red-600">{joinError}</p>}
+          {session && sessionToken && (
+            <p className="text-sm text-emerald-600">Validated session {session.accessKey} with secure token.</p>
+          )}
           <p className="text-sm text-slate-600">Use the secure Electron client for high-stakes exams.</p>
           <Link className="mt-2 inline-flex text-sm font-semibold text-brand-700" href="/exams/launch">
             Download & launch
@@ -79,19 +120,39 @@ export default function StudentDashboard() {
           <h3 className="text-lg font-semibold text-slate-900">Proctoring Status</h3>
           <div className="mt-2 flex justify-between text-sm text-slate-700">
             <span>Camera</span>
-            <strong>Active</strong>
+            <strong className={proctoringStatus.cameraActive ? 'text-emerald-700' : 'text-amber-700'}>
+              {proctoringStatus.cameraActive ? 'Streaming' : 'Idle'}
+            </strong>
           </div>
           <div className="flex justify-between text-sm text-slate-700">
             <span>Microphone</span>
-            <strong>Active</strong>
+            <strong className={proctoringStatus.micActive ? 'text-emerald-700' : 'text-amber-700'}>
+              {proctoringStatus.micActive ? 'Streaming' : 'Idle'}
+            </strong>
           </div>
           <div className="flex justify-between text-sm text-slate-700">
             <span>Screen Share</span>
-            <strong>Active</strong>
+            <strong className={proctoringStatus.screenActive ? 'text-emerald-700' : 'text-amber-700'}>
+              {proctoringStatus.screenActive ? 'Streaming' : 'Idle'}
+            </strong>
           </div>
           <div className="flex justify-between text-sm text-slate-700">
             <span>Flags</span>
-            <strong>None</strong>
+            <strong className={proctoringStatus.flags.length ? 'text-red-700' : 'text-emerald-700'}>
+              {proctoringStatus.flags.length ? proctoringStatus.flags.join(', ') : 'None'}
+            </strong>
+          </div>
+          <div className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-700">
+            <div className="flex items-center justify-between">
+              <span>Status</span>
+              <strong className={proctoringStatus.online ? 'text-emerald-700' : 'text-amber-700'}>
+                {proctoringStatus.online ? 'Connected' : 'Offline'}
+              </strong>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>Last event</span>
+              <strong>{lastUpdatedLabel}</strong>
+            </div>
           </div>
         </Card>
       </section>

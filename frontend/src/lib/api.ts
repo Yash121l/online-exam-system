@@ -1,6 +1,7 @@
 import { config } from './config';
 import { clientLogger } from './logger';
 import { loadAuth, persistAuth } from './auth';
+import { ExamSession } from './types';
 
 let authToken: string | null = loadAuth()?.accessToken ?? null;
 
@@ -77,6 +78,46 @@ export async function fetchQuestionBank() {
     throw new Error('Failed to load question bank');
   }
   return res.json();
+}
+
+export async function createExamSession(payload: { examId: string; candidateName: string; candidateId?: string }) {
+  const res = await fetch(`${config.apiBaseUrl}/exam-sessions`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    throw new Error('Failed to create exam session');
+  }
+  return res.json() as Promise<{ session: ExamSession; sessionToken: string }>;
+}
+
+export async function joinExamByKey(payload: { examKey: string; candidateName?: string }) {
+  const res = await fetch(`${config.apiBaseUrl}/exam-sessions/join`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) {
+    throw new Error('Invalid or expired exam key');
+  }
+  return res.json() as Promise<{ session: ExamSession; sessionToken: string }>;
+}
+
+export async function fetchAssignedSessions() {
+  const res = await fetch(`${config.apiBaseUrl}/exam-sessions/assigned`, { headers: jsonHeaders() });
+  if (!res.ok) {
+    throw new Error('Failed to load assigned sessions');
+  }
+  return res.json() as Promise<ExamSession[]>;
+}
+
+export async function fetchUpcomingSessions() {
+  const res = await fetch(`${config.apiBaseUrl}/exam-sessions/upcoming`, { headers: jsonHeaders() });
+  if (!res.ok) {
+    throw new Error('Failed to load upcoming sessions');
+  }
+  return res.json() as Promise<ExamSession[]>;
 }
 
 export async function createQuestion(examId: string, payload: any) {

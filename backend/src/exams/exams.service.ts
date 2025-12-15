@@ -162,7 +162,7 @@ export class ExamsService {
     return this.prisma.exam.findUnique({ where: { id } });
   }
 
-  private async ensureExamExists(examId: string) {
+  async ensureExamExists(examId: string) {
     const exam = await this.prisma.exam.findUnique({ where: { id: examId } });
     if (!exam) {
       throw new NotFoundException(`Exam ${examId} not found`);
