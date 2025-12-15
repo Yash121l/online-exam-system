@@ -21,19 +21,13 @@ export default function AdminDashboard() {
           <p className="text-slate-600">
             Build exams, manage proctoring, and monitor live sessions with AI-assisted insights and real-time alerts.
           </p>
-          <div className="flex gap-3">
-            <Link
-              href="/auth/register"
-              className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-brand-900 to-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-card"
-            >
-              Invite Evaluator
-            </Link>
-            <Link
-              href="/auth/login"
-              className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:border-brand-500 hover:text-brand-700"
-            >
-              Switch Account
-            </Link>
+          <div className="flex flex-wrap gap-3">
+            <Button asChild>
+              <Link href="/exams/builder">Go to builder</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/auth/login">Switch Account</Link>
+            </Button>
           </div>
           {authRole && (
             <div className="inline-flex items-center rounded-lg bg-green-50 px-3 py-1 text-sm font-semibold text-green-700">
@@ -65,7 +59,7 @@ export default function AdminDashboard() {
             <span>Scheduled</span>
             <strong>2</strong>
           </div>
-          <Link href="/" className="mt-3 inline-flex text-sm font-semibold text-brand-600">
+          <Link href="/exams/builder" className="mt-3 inline-flex text-sm font-semibold text-brand-600">
             Go to builder
           </Link>
         </Card>
@@ -95,7 +89,7 @@ export default function AdminDashboard() {
             <span>Exports</span>
             <strong>CSV · PDF</strong>
           </div>
-          <Link href="/" className="mt-3 inline-flex text-sm font-semibold text-brand-600">
+          <Link href="/dashboard/admin" className="mt-3 inline-flex text-sm font-semibold text-brand-600">
             View reports
           </Link>
         </Card>
