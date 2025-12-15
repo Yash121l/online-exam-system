@@ -4,21 +4,33 @@ import { Layout } from '../../components/Layout';
 import { Card } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
+import { useExamKeyJoin } from '../../lib/hooks';
+import { buildDeepLink, openSecureClient } from '../../lib/launch';
 
 export default function LaunchExamPage() {
   const [examKey, setExamKey] = useState('AE-4F9Q-2024');
   const [status, setStatus] = useState<string | null>(null);
+  const { session, sessionToken, loading, error, validateKey } = useExamKeyJoin();
 
-  const launchUrl = useMemo(() => `aegisexam://launch?examKey=${encodeURIComponent(examKey)}`, [examKey]);
+  const launchUrl = useMemo(
+    () => (session && sessionToken ? buildDeepLink(sessionToken, session) : `aegisexam://launch?examKey=${encodeURIComponent(examKey)}`),
+    [examKey, session, sessionToken]
+  );
 
-  const onLaunch = (e: FormEvent) => {
+  const onLaunch = async (e: FormEvent) => {
     e.preventDefault();
     if (!examKey.trim()) {
       setStatus('Enter an exam key to launch the secure client.');
       return;
     }
-    window.open(launchUrl, '_blank');
-    setStatus('If the secure client is installed, it will open automatically.');
+
+    try {
+      const result = await validateKey(examKey.trim());
+      const deepLink = openSecureClient(result.sessionToken, result.session);
+      setStatus(`Secure client is launching via ${deepLink}`);
+    } catch (err: any) {
+      setStatus(err?.message ?? 'If the secure client is installed, it will open automatically.');
+    }
   };
 
   return (
@@ -61,10 +73,14 @@ export default function LaunchExamPage() {
               Exam key
               <Input value={examKey} onChange={(e) => setExamKey(e.target.value)} placeholder="e.g., AE-4F9Q-2024" />
             </label>
-            <Button type="submit" className="w-full">
-              Launch in secure app
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Validating...' : 'Launch in secure app'}
             </Button>
             {status && <p className="text-sm text-slate-600">{status}</p>}
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            {session && sessionToken && (
+              <p className="text-sm text-emerald-700">Token ready for {session.accessKey}. Deep link: {launchUrl}</p>
+            )}
           </form>
           <div className="mt-5 rounded-lg bg-slate-50 p-3 text-sm text-slate-700">
             <p className="font-semibold text-slate-900">Need to test first?</p>

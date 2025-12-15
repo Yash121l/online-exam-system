@@ -17,6 +17,9 @@ let mainWindow: BrowserWindow | null = null;
 let monitorInterval: NodeJS.Timeout | null = null;
 let wsClient: Socket | null = null;
 let frameFlushInterval: NodeJS.Timeout | null = null;
+let sessionToken: string | null = null;
+let launchSessionId: string | null = null;
+let launchExamId: string | null = null;
 const pendingFrames: Array<{ examSessionId: string; frameType: 'webcam' | 'screen' | 'audio'; data: string; sequence?: number }> = [];
 const MAX_PENDING_FRAMES = 30;
 
@@ -44,6 +47,60 @@ async function flushOfflineLogs() {
   }
 }
 
+function buildFrontendUrl() {
+  const url = new URL(FRONTEND_URL);
+  if (sessionToken) url.searchParams.set('sessionToken', sessionToken);
+  if (launchSessionId) url.searchParams.set('examSessionId', launchSessionId);
+  if (launchExamId) url.searchParams.set('examId', launchExamId);
+  return url.toString();
+}
+
+function captureLaunchParams(urlOrArgs: string) {
+  try {
+    const parsed = new URL(urlOrArgs);
+    if (!parsed.protocol.startsWith('aegisexam')) return;
+    sessionToken = parsed.searchParams.get('token') ?? sessionToken;
+    launchSessionId = parsed.searchParams.get('sessionId') ?? launchSessionId;
+    launchExamId = parsed.searchParams.get('examId') ?? launchExamId;
+    reconnectProctoringSocket();
+    if (mainWindow) {
+      mainWindow.loadURL(buildFrontendUrl());
+    }
+  } catch (err) {
+    forwardLog({ level: 'warn', message: 'Failed to parse launch parameters', context: { err: String(err) } });
+  }
+}
+
+function hydrateFromArgv(argv: string[]) {
+  argv.forEach((arg) => {
+    if (arg.startsWith('aegisexam://')) captureLaunchParams(arg);
+    if (arg.startsWith('--sessionToken=')) sessionToken = arg.split('=')[1];
+    if (arg.startsWith('--sessionId=')) launchSessionId = arg.split('=')[1];
+    if (arg.startsWith('--examId=')) launchExamId = arg.split('=')[1];
+  });
+  if (sessionToken || launchSessionId) {
+    reconnectProctoringSocket();
+  }
+}
+
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+}
+
+app.on('second-instance', (_event, argv) => {
+  hydrateFromArgv(argv);
+  if (mainWindow) {
+    mainWindow.loadURL(buildFrontendUrl());
+    mainWindow.focus();
+  }
+});
+
+app.on('open-url', (event, url) => {
+  event.preventDefault();
+  captureLaunchParams(url);
+});
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -59,7 +116,7 @@ function createWindow() {
     }
   });
 
-  mainWindow.loadURL(FRONTEND_URL);
+  mainWindow.loadURL(buildFrontendUrl());
 
   mainWindow.on('blur', () =>
     forwardLog({
@@ -93,7 +150,7 @@ function registerShortcuts() {
       message: 'Print Screen attempted'
     });
     sendProctoringEvent({
-      examSessionId: 'unknown',
+      examSessionId: activeExamSessionId(),
       eventType: 'shortcut.printscreen',
       payload: { ts: Date.now() }
     });
@@ -147,8 +204,15 @@ async function monitorScreenCapture() {
 
 function connectProctoringSocket() {
   if (wsClient) return;
+  const authPayload = sessionToken
+    ? {
+        sessionToken,
+        examSessionId: launchSessionId
+      }
+    : undefined;
   wsClient = io(`${BACKEND_WS_BASE}/proctoring`, {
-    transports: ['websocket']
+    transports: ['websocket'],
+    auth: authPayload
   });
 
   wsClient.on('connect', () => {
@@ -158,6 +222,18 @@ function connectProctoringSocket() {
   wsClient.on('disconnect', (reason) => {
     forwardLog({ level: 'warn', message: 'Proctoring socket disconnected', context: { reason } });
   });
+}
+
+function activeExamSessionId() {
+  return launchSessionId ?? 'unknown';
+}
+
+function reconnectProctoringSocket() {
+  if (wsClient) {
+    wsClient.disconnect();
+    wsClient = null;
+  }
+  connectProctoringSocket();
 }
 
 function sendProctoringEvent(event: { examSessionId: string; eventType: string; payload?: Record<string, unknown> }) {
@@ -211,9 +287,14 @@ function hardenSession() {
 }
 
 app.whenReady().then(() => {
+  if (!gotTheLock) return;
+  hydrateFromArgv(process.argv);
   createWindow();
   registerShortcuts();
   hardenSession();
+  if (!app.isDefaultProtocolClient('aegisexam')) {
+    app.setAsDefaultProtocolClient('aegisexam');
+  }
   connectProctoringSocket();
   frameFlushInterval = setInterval(flushFrames, 500);
 
