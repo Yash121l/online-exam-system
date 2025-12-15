@@ -87,6 +87,9 @@ AEGISEXAM_FRONTEND_URL=http://localhost:3000
    cd frontend
    npm run dev
    ```
+   - Landing + persona flows: `http://localhost:3000/`
+   - Admin exam builder: `http://localhost:3000/exams/builder`
+   - Student secure-launch page (Electron download + deep link): `http://localhost:3000/exams/launch`
 4. **Electron secure client**
    ```bash
    cd electron-app

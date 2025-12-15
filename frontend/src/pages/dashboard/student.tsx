@@ -22,19 +22,16 @@ export default function StudentDashboard() {
           <p className="text-slate-600">
             Access exams with unique keys, stay within the locked-down client, and sync progress even if you go offline.
           </p>
-          <div className="flex gap-3">
-            <Link
-              href="/auth/login"
-              className="inline-flex items-center justify-center rounded-lg bg-gradient-to-r from-brand-900 to-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-card"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/auth/register"
-              className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:border-brand-500 hover:text-brand-700"
-            >
-              Create Student Account
-            </Link>
+          <div className="flex flex-wrap gap-3">
+            <Button asChild>
+              <Link href="/exams/launch">Download secure app</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/auth/login">Sign In</Link>
+            </Button>
+            <Button asChild variant="ghost">
+              <Link href="/auth/register">Create Student Account</Link>
+            </Button>
           </div>
           {authRole && (
             <div className="inline-flex items-center rounded-lg bg-green-50 px-3 py-1 text-sm font-semibold text-green-700">
@@ -48,6 +45,7 @@ export default function StudentDashboard() {
             <li>Full-screen enforced, shortcuts blocked</li>
             <li>Mic & camera permissions granted</li>
             <li>Offline cache ready; auto-resync enabled</li>
+            <li>Launch exam via <code className="rounded bg-black/20 px-1">aegisexam://</code> link</li>
           </ul>
         </Card>
       </div>
@@ -73,6 +71,9 @@ export default function StudentDashboard() {
           <Input placeholder="e.g., AE-4F9Q-2024" className="mt-2" />
           <Button className="mt-3 w-full">Join Exam</Button>
           <p className="text-sm text-slate-600">Use the secure Electron client for high-stakes exams.</p>
+          <Link className="mt-2 inline-flex text-sm font-semibold text-brand-700" href="/exams/launch">
+            Download & launch
+          </Link>
         </Card>
         <Card className="p-4">
           <h3 className="text-lg font-semibold text-slate-900">Proctoring Status</h3>
