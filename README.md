@@ -127,12 +127,54 @@ AEGISEXAM_FRONTEND_URL=http://localhost:3000
 
 ## High-Level Architecture
 ```
-[Next.js Portal] ---- REST ----\
-                                \
-                                 [NestJS Backend] ---- PostgreSQL
-[Electron Secure Client] -- WS ---/                 \
-                                                    \---- AWS S3 (exam media, proctoring artifacts)
+                (Proctoring streams: webcam/audio, screen events)
+ [Next.js Portal] --- REST/WS ---\                                \\
+                                  \                                \\
+                                   \                                \\
+ (Log forwarding: UI + Electron)    [NestJS Backend] --- Prisma ---> PostgreSQL
+ (Offline replay queue flush)      /    |     |  \\
+ [Electron Secure Client] -- WS ---     |     |   \\__ Signed URLs --> AWS S3 (exam media + proctoring artifacts)
+                                      Webhooks  |    
+                                    (future AI  |  (Analytics workers consume S3 + DB)
+                                     proctors)  |    
+                                               REST/WS responses back to clients
 ```
+
+## Delivery Roadmap
+### Milestone 1: Exam Modeling & Scheduling
+- **Scope**: Define exam entities, question banks, session windows, and seat allocation with basic CRUD in `backend/` and management UI in `frontend/`.
+- **Acceptance Criteria**: REST endpoints for exams/schedules, Prisma migrations applied, admin UI to create/publish exams, schedule validation (no overlap) enforced.
+- **Ownership**: Backend + Frontend.
+- **Interfaces**: REST (`/api/exams`, `/api/schedules`), WebSocket notifications for schedule updates; exam media signed URL flow via S3 utilities.
+- **Links**: `backend/`, `frontend/`.
+
+### Milestone 2: AI Proctoring Ingest & Processing
+- **Scope**: Real-time WebSocket channels for webcam/audio/screen streams from `electron-app/`, event normalization in `backend/`, and S3 storage for artifacts with stubbed AI hooks.
+- **Acceptance Criteria**: WS rooms per session, ingest pipeline persists proctoring events, artifacts written to S3 via signed URLs, alerts echoed to UI; log forwarding persisted.
+- **Ownership**: Backend + Electron.
+- **Interfaces**: WebSocket namespace `/proctoring`, REST for artifact presigns (`/api/proctoring/signed-urls`), S3 upload/download paths, optional webhook surface for AI processors.
+- **Links**: `backend/`, `electron-app/`.
+
+### Milestone 3: Offline Electron Sync & Replay
+- **Scope**: Enhance `electron-app/` offline queue for exams, attempts, and logs; backend endpoints tolerate idempotent replay; delta sync for scheduled exams.
+- **Acceptance Criteria**: Electron can take/sync an exam offline, replay WS/REST payloads when online, conflict resolution rules documented, retries with backoff logged.
+- **Ownership**: Electron + Backend.
+- **Interfaces**: REST batching (`/api/offline/replay`), WS reconnect handshake re-sends buffered proctoring events, S3 resumable uploads for large artifacts.
+- **Links**: `electron-app/`, `backend/`.
+
+### Milestone 4: Evaluator Grading Workflows
+- **Scope**: Build evaluator queues and grading UI in `frontend/`, grading APIs and scoring logic in `backend/`, plus audit logging.
+- **Acceptance Criteria**: Worklists by role, rubric scoring with comments, grade submission endpoints, audit trail persisted; anonymized candidate view toggles.
+- **Ownership**: Backend + Frontend.
+- **Interfaces**: REST (`/api/grades`, `/api/attempts/{id}`), WebSocket notifications for grade state changes, exports via S3 signed URLs for rubrics/templates.
+- **Links**: `frontend/`, `backend/`.
+
+### Milestone 5: Reporting & Exports
+- **Scope**: Reporting dashboards in `frontend/` that query aggregated metrics from `backend/`, export flows to CSV/PDF with S3-backed downloads.
+- **Acceptance Criteria**: REST endpoints for summary and per-exam metrics, export jobs generate downloadable links, performance baselines logged; administrator access control enforced.
+- **Ownership**: Backend + Frontend.
+- **Interfaces**: REST (`/api/reports/*`, `/api/exports`), WebSocket for job completion notifications, S3 presigned download URLs.
+- **Links**: `backend/`, `frontend/`.
 
 ## Next Steps
 - Implement persistence (exam models, question bank, scheduling) with migrations.
