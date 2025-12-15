@@ -16,6 +16,9 @@ const pendingLogs: ClientLogPayload[] = [];
 let mainWindow: BrowserWindow | null = null;
 let monitorInterval: NodeJS.Timeout | null = null;
 let wsClient: Socket | null = null;
+let frameFlushInterval: NodeJS.Timeout | null = null;
+const pendingFrames: Array<{ examSessionId: string; frameType: 'webcam' | 'screen' | 'audio'; data: string; sequence?: number }> = [];
+const MAX_PENDING_FRAMES = 30;
 
 async function forwardLog(payload: ClientLogPayload) {
   try {
@@ -162,6 +165,25 @@ function sendProctoringEvent(event: { examSessionId: string; eventType: string; 
   wsClient?.emit('proctoring:event', event);
 }
 
+function enqueueProctoringFrame(frame: { examSessionId: string; frameType: 'webcam' | 'screen' | 'audio'; data: string; sequence?: number }) {
+  if (pendingFrames.length >= MAX_PENDING_FRAMES) {
+    pendingFrames.shift();
+  }
+  pendingFrames.push(frame);
+}
+
+function flushFrames() {
+  if (!pendingFrames.length) return;
+  if (!wsClient) connectProctoringSocket();
+  const frame = pendingFrames.shift();
+  if (!frame) return;
+  wsClient?.emit('proctoring:event', {
+    examSessionId: frame.examSessionId,
+    eventType: `stream.${frame.frameType}`,
+    payload: { data: frame.data, sequence: frame.sequence }
+  });
+}
+
 function hardenSession() {
   session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
     if (permission === 'media') {
@@ -193,6 +215,7 @@ app.whenReady().then(() => {
   registerShortcuts();
   hardenSession();
   connectProctoringSocket();
+  frameFlushInterval = setInterval(flushFrames, 500);
 
   ipcMain.handle('client-log', async (_event, payload: ClientLogPayload) => {
     await forwardLog(payload);
@@ -202,6 +225,11 @@ app.whenReady().then(() => {
   ipcMain.handle('flush-offline', async () => {
     await flushOfflineLogs();
     return { queued: pendingLogs.length };
+  });
+
+  ipcMain.handle('stream-frame', async (_event, payload: { examSessionId: string; frameType: 'webcam' | 'screen' | 'audio'; data: string; sequence?: number }) => {
+    enqueueProctoringFrame(payload);
+    return { buffered: pendingFrames.length };
   });
 
   setInterval(() => {
@@ -221,5 +249,8 @@ app.on('window-all-closed', () => {
   }
   if (monitorInterval) {
     clearInterval(monitorInterval);
+  }
+  if (frameFlushInterval) {
+    clearInterval(frameFlushInterval);
   }
 });
