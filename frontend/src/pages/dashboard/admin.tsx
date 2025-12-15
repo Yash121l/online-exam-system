@@ -74,7 +74,7 @@ export default function AdminDashboard() {
             <span>Flags today</span>
             <strong>9</strong>
           </div>
-          <Link href="/" className="mt-3 inline-flex text-sm font-semibold text-brand-600">
+          <Link href="/dashboard/invigilation" className="mt-3 inline-flex text-sm font-semibold text-brand-600">
             Open monitor
           </Link>
         </Card>

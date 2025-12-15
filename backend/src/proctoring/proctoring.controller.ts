@@ -1,17 +1,15 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
 import { ProctoringService } from './proctoring.service';
-
-type StreamPayload = {
-  examSessionId: string;
-  sequence?: number;
-  frameType: 'webcam' | 'screen' | 'audio';
-  data: string;
-};
+import { StreamProcessingService, StreamPayload } from './stream-processing.service';
 
 @Controller('proctoring')
 export class ProctoringController {
-  constructor(private readonly logger: Logger, private readonly proctoringService: ProctoringService) {}
+  constructor(
+    private readonly logger: Logger,
+    private readonly proctoringService: ProctoringService,
+    private readonly streamProcessingService: StreamProcessingService
+  ) {}
 
   @Post('ingest/frame')
   ingestFrame(@Body() payload: StreamPayload) {
@@ -23,12 +21,8 @@ export class ProctoringController {
       },
       'Proctoring frame ingested'
     );
-    void this.proctoringService.ingestEvent({
-      examSessionId: payload.examSessionId,
-      eventType: `stream.${payload.frameType}`,
-      payload: { sequence: payload.sequence, data: payload.data }
-    });
-    return { received: true, ts: Date.now() };
+    void this.streamProcessingService.handleStreamFrame(payload);
+    return { received: true, ts: Date.now(), queued: true };
   }
 
   @Post('ingest/analytics')
@@ -40,7 +34,17 @@ export class ProctoringController {
       },
       'Analytics flags received'
     );
-    void this.proctoringService.ingestAnalytics(payload);
-    return { received: true, ts: Date.now() };
+    void this.streamProcessingService.handleAnalytics(payload);
+    return { received: true, ts: Date.now(), queued: true };
+  }
+
+  @Get('sessions/:examSessionId/flags')
+  listFlags(@Param('examSessionId') examSessionId: string) {
+    return this.proctoringService.getRecentFlags(examSessionId);
+  }
+
+  @Get('sessions/:examSessionId/summary')
+  getSummary(@Param('examSessionId') examSessionId: string) {
+    return this.proctoringService.getLatestSummary(examSessionId);
   }
 }

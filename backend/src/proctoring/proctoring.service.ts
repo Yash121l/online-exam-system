@@ -25,4 +25,41 @@ export class ProctoringService {
       }
     });
   }
+
+  ingestSummary(data: { examSessionId: string; summary: Record<string, unknown> }) {
+    return this.prisma.proctoringEvent.create({
+      data: {
+        examSessionId: data.examSessionId,
+        eventType: 'analytics.summary',
+        payload: data.summary as Prisma.InputJsonValue
+      }
+    });
+  }
+
+  async getRecentFlags(examSessionId: string) {
+    const rows = await this.prisma.proctoringEvent.findMany({
+      where: { examSessionId, eventType: 'analytics.flags' },
+      orderBy: { createdAt: 'desc' },
+      take: 20
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      createdAt: row.createdAt,
+      flags: (row.payload as { flags?: string[] })?.flags ?? []
+    }));
+  }
+
+  async getLatestSummary(examSessionId: string) {
+    const row = await this.prisma.proctoringEvent.findFirst({
+      where: { examSessionId, eventType: 'analytics.summary' },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (!row) return null;
+    return {
+      id: row.id,
+      createdAt: row.createdAt,
+      summary: row.payload ?? {}
+    };
+  }
 }
