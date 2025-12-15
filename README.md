@@ -106,6 +106,32 @@ AEGISEXAM_FRONTEND_URL=http://localhost:3000
   cd backend
   npm test
   ```
+- Frontend (Next.js) checks:
+  ```bash
+  cd frontend
+  npm test          # component/unit tests
+  npm run lint      # ESLint/TypeScript linting
+  npm run playwright # UI/e2e tests when present
+  ```
+  - Store new frontend unit/integration specs under `frontend/__tests__` or co-located `*.test.ts(x)` files.
+- Electron app checks:
+  ```bash
+  cd electron-app
+  npm test          # preload + IPC unit tests
+  npm run lint      # lint preload/renderer code
+  npm run smoke     # lightweight electron launch/smoke flow when defined
+  ```
+  - Place preload/IPC unit tests under `electron-app/__tests__` or alongside modules in `electron-app/src`.
+- Planned integration/e2e coverage:
+  - End-to-end runs should exercise backend APIs from both the frontend (browser) and Electron client. Suggested placement: `frontend/playwright` for portal-to-backend journeys and `electron-app/tests/e2e` for secure client scenarios (exam launch, logging, offline queue replay).
+  - Start required services before running cross-app tests:
+    ```bash
+    docker-compose up -d           # Postgres + LocalStack (S3)
+    cd backend && npm run start:dev # API/WS
+    cd ../frontend && npm run dev   # Portal (if testing browser flows)
+    cd ../electron-app && npm run dev # Electron preload/renderer for client flows
+    ```
+  - Use `.env` values that point both clients to the same backend and LocalStack endpoints. Planned e2e suites should assume Node.js 20+, running on macOS/Windows/Linux with an X11/Wayland/GUI-capable environment for Electron launch.
 
 ## Deployment Notes
 - **Backend**: `npm run build` then run `node dist/main.js` (configure environment for Postgres + S3). Deploy behind HTTPS with a reverse proxy; forward structured logs to your log pipeline.
