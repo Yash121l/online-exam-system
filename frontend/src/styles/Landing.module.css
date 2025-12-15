@@ -1,0 +1,149 @@
+.hero {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 2rem;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.heroText h1 {
+  font-size: 2.7rem;
+  margin: 0.3rem 0;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  color: #475569;
+  line-height: 1.6;
+}
+
+.tag {
+  display: inline-flex;
+  background: #e0f2fe;
+  color: #075985;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.primary {
+  background: linear-gradient(135deg, #0f172a, #2563eb);
+  color: #fff;
+  padding: 0.85rem 1.2rem;
+  border-radius: 0.8rem;
+  text-decoration: none;
+}
+
+.secondary {
+  border: 1px solid #cbd5e1;
+  padding: 0.85rem 1.2rem;
+  border-radius: 0.8rem;
+  color: #0f172a;
+  text-decoration: none;
+}
+
+.pills {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
+}
+
+.pills span {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+}
+
+.heroCard {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 1.4rem;
+  border-radius: 1rem;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.25);
+}
+
+.heroCardHeader {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.heroCard ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  line-height: 1.6;
+}
+
+.personas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  padding: 1.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.9rem;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.kicker {
+  color: #2563eb;
+  font-weight: 700;
+  margin: 0;
+}
+
+.body {
+  color: #475569;
+}
+
+.link {
+  color: #2563eb;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.timeline {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 2rem;
+  padding: 2rem 0;
+  align-items: center;
+}
+
+.steps {
+  display: grid;
+  gap: 1rem;
+}
+
+.step {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.9rem;
+  padding: 1rem;
+  background: #fff;
+}
+
+.stepLabel {
+  font-weight: 700;
+}
+
+.stepBody {
+  color: #475569;
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+}

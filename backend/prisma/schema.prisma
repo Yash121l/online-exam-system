@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Exam {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  status      String   @default("draft")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  sections    Json?
+
+  questions Question[]
+  sessions  ExamSession[]
+}
+
+model ProctoringEvent {
+  id            String   @id @default(uuid())
+  examSessionId String?
+  eventType     String
+  payload       Json?
+  createdAt     DateTime @default(now())
+
+  session ExamSession? @relation(fields: [examSessionId], references: [id])
+}
+
+model User {
+  id             String           @id @default(uuid())
+  email          String           @unique
+  displayName    String
+  role           Role
+  passwordHash   String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  sessions       ExamSession[]
+  RequestLog     RequestLog[]
+  SocketEventLog SocketEventLog[]
+}
+
+model ExamSession {
+  id            String            @id @default(uuid())
+  examId        String
+  candidateId   String?
+  candidateName String
+  status        SessionStatus     @default(PENDING)
+  startedAt     DateTime?
+  endedAt       DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  exam          Exam              @relation(fields: [examId], references: [id])
+  user          User?             @relation(fields: [candidateId], references: [id])
+  proctoring    ProctoringEvent[]
+  attempts      ExamAttempt[]
+}
+
+model Question {
+  id        String       @id @default(uuid())
+  examId    String
+  prompt    String
+  type      QuestionType
+  options   Json?
+  answerKey String?
+  points    Int          @default(1)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  exam      Exam         @relation(fields: [examId], references: [id])
+}
+
+model RequestLog {
+  id         String   @id @default(uuid())
+  method     String
+  path       String
+  statusCode Int
+  durationMs Int
+  userId     String?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id])
+}
+
+model SocketEventLog {
+  id        String   @id @default(uuid())
+  eventType String
+  socketId  String?
+  userId    String?
+  payload   Json?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+}
+
+model ExamAttempt {
+  id            String        @id @default(uuid())
+  examSessionId String
+  score         Float?
+  status        AttemptStatus @default(NOT_STARTED)
+  startedAt     DateTime?
+  submittedAt   DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  session       ExamSession   @relation(fields: [examSessionId], references: [id])
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  EVALUATOR
+  STUDENT
+}
+
+enum QuestionType {
+  MCQ
+  ESSAY
+  CODE
+  DIAGRAM
+  UPLOAD
+}
+
+enum SessionStatus {
+  PENDING
+  ACTIVE
+  SUBMITTED
+  REVIEW
+  GRADED
+}
+
+enum AttemptStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  SUBMITTED
+  GRADED
+}
