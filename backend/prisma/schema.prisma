@@ -12,12 +12,32 @@ model Exam {
   title       String
   description String?
   status      String   @default("draft")
+  published   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   sections    Json?
+  scheduling  Json?
+  randomizeQuestions Boolean @default(false)
+  randomizeOptions   Boolean @default(false)
+
+  sectionMeta ExamSection[]
 
   questions Question[]
   sessions  ExamSession[]
+  pdfImports PdfImport[]
+}
+
+model ExamSection {
+  id            String   @id @default(uuid())
+  examId        String
+  title         String
+  timerSeconds  Int?
+  navigation    Json?
+  tools         Json?
+  ordering      Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  exam          Exam     @relation(fields: [examId], references: [id])
 }
 
 model ProctoringEvent {
@@ -65,11 +85,41 @@ model Question {
   prompt    String
   type      QuestionType
   options   Json?
-  answerKey String?
+  answerKey Json?
   points    Int          @default(1)
+  mediaKey  String?
+  bankItemId String?
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
   exam      Exam         @relation(fields: [examId], references: [id])
+  bankItem  QuestionBankItem? @relation(fields: [bankItemId], references: [id])
+}
+
+model QuestionBankItem {
+  id           String             @id @default(uuid())
+  prompt       String
+  type         QuestionType
+  options      Json?
+  answerKey    Json?
+  mediaKey     String?
+  format       QuestionTemplateType
+  topics       Json?
+  difficulty   String?
+  tags         Json?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  questions    Question[]
+}
+
+model PdfImport {
+  id        String   @id @default(uuid())
+  examId    String
+  pdfKey    String
+  regions   Json?
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  exam      Exam     @relation(fields: [examId], references: [id])
 }
 
 model RequestLog {
@@ -120,6 +170,56 @@ enum QuestionType {
   CODE
   DIAGRAM
   UPLOAD
+  TRUE_FALSE
+  SHORT_ANSWER
+  LONG_ANSWER
+  FILL_BLANK
+  MATCHING
+  ORDERING
+  NUMERIC_RANGE
+  MATRIX_RATING
+  LIKERT
+  HOTSPOT
+  DRAG_DROP
+  CLOZE
+  TABLE_COMPLETION
+  GRAPH_SKETCH
+  CHART_LABELING
+  COMPREHENSION
+  CASE_STUDY
+  SIMULATION
+  AUDIO_RESPONSE
+  VIDEO_RESPONSE
+}
+
+enum QuestionTemplateType {
+  MCQ
+  SINGLE_CHOICE
+  MULTI_CHOICE
+  TRUE_FALSE
+  ESSAY
+  CODE
+  DIAGRAM
+  UPLOAD
+  AUDIO_RESPONSE
+  VIDEO_RESPONSE
+  FILL_BLANK
+  MATCHING
+  ORDERING
+  NUMERIC_RANGE
+  MATRIX_RATING
+  LIKERT
+  SHORT_ANSWER
+  LONG_ANSWER
+  HOTSPOT
+  DRAG_DROP
+  CLOZE
+  TABLE_COMPLETION
+  GRAPH_SKETCH
+  CHART_LABELING
+  COMPREHENSION
+  CASE_STUDY
+  SIMULATION
 }
 
 enum SessionStatus {
