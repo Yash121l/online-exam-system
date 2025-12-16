@@ -1,3 +1,6 @@
+// This is your Prisma schema file for AegisExam
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,233 +10,892 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Exam {
-  id          String   @id @default(uuid())
-  title       String
-  description String?
-  status      String   @default("draft")
-  published   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  sections    Json?
-  scheduling  Json?
-  randomizeQuestions Boolean @default(false)
-  randomizeOptions   Boolean @default(false)
+// ============================================
+// AUTHENTICATION & USER MANAGEMENT
+// ============================================
 
-  sectionMeta ExamSection[]
-
-  questions Question[]
-  sessions  ExamSession[]
-  pdfImports PdfImport[]
-}
-
-model ExamSection {
-  id            String   @id @default(uuid())
-  examId        String
-  title         String
-  timerSeconds  Int?
-  navigation    Json?
-  tools         Json?
-  ordering      Int
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  exam          Exam     @relation(fields: [examId], references: [id])
-}
-
-model ProctoringEvent {
-  id            String   @id @default(uuid())
-  examSessionId String?
-  eventType     String
-  payload       Json?
-  createdAt     DateTime @default(now())
-
-  session ExamSession? @relation(fields: [examSessionId], references: [id])
-}
-
-model User {
-  id             String           @id @default(uuid())
-  email          String           @unique
-  displayName    String
-  role           Role
-  passwordHash   String
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  sessions       ExamSession[]
-  RequestLog     RequestLog[]
-  SocketEventLog SocketEventLog[]
-}
-
-model ExamSession {
-  id            String            @id @default(uuid())
-  examId        String
-  candidateId   String?
-  candidateName String
-  accessKey     String            @unique @default(cuid())
-  status        SessionStatus     @default(PENDING)
-  startedAt     DateTime?
-  endedAt       DateTime?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  exam          Exam              @relation(fields: [examId], references: [id])
-  user          User?             @relation(fields: [candidateId], references: [id])
-  proctoring    ProctoringEvent[]
-  attempts      ExamAttempt[]
-}
-
-model Question {
-  id        String       @id @default(uuid())
-  examId    String
-  prompt    String
-  type      QuestionType
-  options   Json?
-  answerKey Json?
-  points    Int          @default(1)
-  mediaKey  String?
-  bankItemId String?
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
-  exam      Exam         @relation(fields: [examId], references: [id])
-  bankItem  QuestionBankItem? @relation(fields: [bankItemId], references: [id])
-}
-
-model QuestionBankItem {
-  id           String             @id @default(uuid())
-  prompt       String
-  type         QuestionType
-  options      Json?
-  answerKey    Json?
-  mediaKey     String?
-  format       QuestionTemplateType
-  topics       Json?
-  difficulty   String?
-  tags         Json?
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  questions    Question[]
-}
-
-model PdfImport {
-  id        String   @id @default(uuid())
-  examId    String
-  pdfKey    String
-  regions   Json?
-  status    String   @default("pending")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  exam      Exam     @relation(fields: [examId], references: [id])
-}
-
-model RequestLog {
-  id         String   @id @default(uuid())
-  method     String
-  path       String
-  statusCode Int
-  durationMs Int
-  userId     String?
-  ip         String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
-  user       User?    @relation(fields: [userId], references: [id])
-}
-
-model SocketEventLog {
-  id        String   @id @default(uuid())
-  eventType String
-  socketId  String?
-  userId    String?
-  payload   Json?
-  createdAt DateTime @default(now())
-  user      User?    @relation(fields: [userId], references: [id])
-}
-
-model ExamAttempt {
-  id            String        @id @default(uuid())
-  examSessionId String
-  score         Float?
-  status        AttemptStatus @default(NOT_STARTED)
-  startedAt     DateTime?
-  submittedAt   DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  session       ExamSession   @relation(fields: [examSessionId], references: [id])
-}
-
-enum Role {
+enum UserRole {
+  SUPER_ADMIN
   ADMIN
   TEACHER
   EVALUATOR
   STUDENT
 }
 
-enum QuestionType {
-  MCQ
-  ESSAY
-  CODE
-  DIAGRAM
-  UPLOAD
-  TRUE_FALSE
-  SHORT_ANSWER
-  LONG_ANSWER
-  FILL_BLANK
-  MATCHING
-  ORDERING
-  NUMERIC_RANGE
-  MATRIX_RATING
-  LIKERT
-  HOTSPOT
-  DRAG_DROP
-  CLOZE
-  TABLE_COMPLETION
-  GRAPH_SKETCH
-  CHART_LABELING
-  COMPREHENSION
-  CASE_STUDY
-  SIMULATION
-  AUDIO_RESPONSE
-  VIDEO_RESPONSE
-}
-
-enum QuestionTemplateType {
-  MCQ
-  SINGLE_CHOICE
-  MULTI_CHOICE
-  TRUE_FALSE
-  ESSAY
-  CODE
-  DIAGRAM
-  UPLOAD
-  AUDIO_RESPONSE
-  VIDEO_RESPONSE
-  FILL_BLANK
-  MATCHING
-  ORDERING
-  NUMERIC_RANGE
-  MATRIX_RATING
-  LIKERT
-  SHORT_ANSWER
-  LONG_ANSWER
-  HOTSPOT
-  DRAG_DROP
-  CLOZE
-  TABLE_COMPLETION
-  GRAPH_SKETCH
-  CHART_LABELING
-  COMPREHENSION
-  CASE_STUDY
-  SIMULATION
-}
-
-enum SessionStatus {
-  PENDING
+enum UserStatus {
   ACTIVE
-  SUBMITTED
-  REVIEW
-  GRADED
+  INACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
 }
+
+model User {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  username     String?    @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         UserRole
+  status       UserStatus @default(PENDING_VERIFICATION)
+  avatar       String?
+  phoneNumber  String?
+
+  // Organization/Institution relationship
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  // Authentication & Security
+  emailVerified    Boolean   @default(false)
+  emailVerifiedAt  DateTime?
+  lastLoginAt      DateTime?
+  lastLoginIp      String?
+  twoFactorEnabled Boolean   @default(false)
+  twoFactorSecret  String?
+
+  // Password Reset
+  passwordResetToken  String?   @unique
+  passwordResetExpiry DateTime?
+
+  // Session Management
+  refreshTokens RefreshToken[]
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete
+
+  // Relationships
+  createdExams        Exam[]               @relation("ExamCreator")
+  assignedExams       ExamAssignment[]
+  studentExamAttempts ExamAttempt[]
+  evaluations         Evaluation[]
+  proctoringSessions  ProctoringSessions[]
+  activityLogs        ActivityLog[]
+  notifications       Notification[]
+  chatMessages        ChatMessage[]
+
+  @@index([email])
+  @@index([organizationId])
+  @@index([role, status])
+  @@map("users")
+}
+
+model RefreshToken {
+  id         String   @id @default(uuid())
+  token      String   @unique
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  isRevoked  Boolean  @default(false)
+  deviceInfo String? // Browser/Device information
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+model Organization {
+  id           String  @id @default(uuid())
+  name         String
+  domain       String? @unique
+  logo         String?
+  address      String?
+  contactEmail String?
+  contactPhone String?
+
+  // Subscription & Billing
+  subscriptionPlan   String? // FREE, BASIC, PREMIUM, ENTERPRISE
+  subscriptionExpiry DateTime?
+  maxUsers           Int?
+  maxExams           Int?
+
+  // Settings
+  settings Json? // Organization-specific settings
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  users         User[]
+  exams         Exam[]
+  questionBanks QuestionBank[]
+
+  @@map("organizations")
+}
+
+// ============================================
+// QUESTION BANK & EXAM MANAGEMENT
+// ============================================
+
+enum QuestionType {
+  MCQ_SINGLE
+  MCQ_MULTIPLE
+  TRUE_FALSE
+  SHORT_ANSWER
+  LONG_ANSWER
+  ESSAY
+  CODE_SNIPPET
+  FILL_IN_BLANK
+  MATCHING
+  ORDERING
+  DIAGRAM
+  SCAN_UPLOAD
+  FILE_UPLOAD
+  DRAG_DROP
+  HOTSPOT
+  AUDIO_RESPONSE
+  VIDEO_RESPONSE
+  MATH_EQUATION
+  NUMERICAL
+  MATRIX
+  ASSERTION_REASON
+  CLOZE_TEST
+  CASE_STUDY
+  SIMULATION
+  PEER_ASSESSMENT
+}
+
+enum DifficultyLevel {
+  VERY_EASY
+  EASY
+  MEDIUM
+  HARD
+  VERY_HARD
+}
+
+model QuestionBank {
+  id             String        @id @default(uuid())
+  name           String
+  description    String?
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  isPublic Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  questions Question[]
+  tags      QuestionBankTag[]
+
+  @@index([organizationId])
+  @@map("question_banks")
+}
+
+model Question {
+  id             String       @id @default(uuid())
+  questionBankId String
+  questionBank   QuestionBank @relation(fields: [questionBankId], references: [id], onDelete: Cascade)
+
+  type       QuestionType
+  difficulty DifficultyLevel @default(MEDIUM)
+
+  // Question Content
+  title             String
+  questionText      String // Main question text (supports HTML/Markdown)
+  questionMediaUrls String[] // S3 URLs for images, audio, video
+
+  // Answer Configuration
+  answerConfig  Json // Flexible JSON for answer structure based on type
+  correctAnswer Json? // Correct answer(s) - structure varies by type
+
+  // Scoring
+  points          Float   @default(1)
+  negativeMarking Float?  @default(0)
+  partialCredit   Boolean @default(false)
+
+  // Metadata
+  subject           String?
+  topic             String?
+  learningObjective String?
+  bloomsTaxonomy    String? // REMEMBER, UNDERSTAND, APPLY, ANALYZE, EVALUATE, CREATE
+
+  // Analytics (calculated)
+  timesUsed           Int    @default(0)
+  avgDifficulty       Float? // Calculated from student performance
+  discriminationIndex Float? // Item discrimination index
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  examQuestions ExamQuestion[]
+  tags          QuestionTag[]
+
+  @@index([questionBankId])
+  @@index([type])
+  @@index([difficulty])
+  @@index([subject])
+  @@map("questions")
+}
+
+model QuestionTag {
+  id         String   @id @default(uuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  tag        String
+
+  @@unique([questionId, tag])
+  @@index([tag])
+  @@map("question_tags")
+}
+
+model QuestionBankTag {
+  id             String       @id @default(uuid())
+  questionBankId String
+  questionBank   QuestionBank @relation(fields: [questionBankId], references: [id], onDelete: Cascade)
+  tag            String
+
+  @@unique([questionBankId, tag])
+  @@index([tag])
+  @@map("question_bank_tags")
+}
+
+// ============================================
+// EXAM CONFIGURATION
+// ============================================
+
+enum ExamStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+  CANCELLED
+}
+
+enum ExamType {
+  PRACTICE
+  QUIZ
+  MIDTERM
+  FINAL
+  CERTIFICATION
+  PLACEMENT
+  MOCK_TEST
+  ASSIGNMENT
+}
+
+enum ProctoringLevel {
+  NONE
+  BASIC
+  ADVANCED
+  AI_ASSISTED
+}
+
+model Exam {
+  id String @id @default(uuid())
+
+  // Basic Info
+  title        String
+  description  String?
+  instructions String?
+
+  examType ExamType
+  status   ExamStatus @default(DRAFT)
+
+  // Ownership
+  creatorId      String
+  creator        User          @relation("ExamCreator", fields: [creatorId], references: [id])
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  // Scheduling
+  scheduledStartTime DateTime?
+  scheduledEndTime   DateTime?
+  duration           Int? // Duration in minutes
+
+  // Access Control
+  accessCode          String?  @unique // Exam Key
+  requireSecureClient Boolean  @default(false)
+  allowedIpRanges     String[] // CIDR notation
+
+  // Configuration
+  config Json // Detailed exam configuration
+  // config includes:
+  // - randomizeQuestions: boolean
+  // - randomizeOptions: boolean
+  // - showQuestionsPerPage: number
+  // - allowBackNavigation: boolean
+  // - showTimer: boolean
+  // - autoSubmit: boolean
+  // - sectionBased: boolean
+  // - sectionTimings: object[]
+
+  // Proctoring
+  proctoringLevel  ProctoringLevel @default(NONE)
+  proctoringConfig Json? // AI proctoring settings
+
+  // Tools & Accessibility
+  allowedTools       String[] // calculator, equation_editor, geogebra, etc.
+  enableTextToSpeech Boolean  @default(false)
+  compensatoryTime   Int? // Extra time in minutes
+
+  // Scoring
+  totalPoints  Float  @default(0)
+  passingScore Float?
+  gradingType  String @default("AUTOMATIC") // AUTOMATIC, MANUAL, HYBRID
+
+  // PDF Import
+  sourcePdfUrl   String? // S3 URL if exam created from PDF
+  pdfQuestionMap Json? // Mapping of PDF areas to questions
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+
+  // Relationships
+  questions   ExamQuestion[]
+  sections    ExamSection[]
+  assignments ExamAssignment[]
+  attempts    ExamAttempt[]
+
+  @@index([creatorId])
+  @@index([organizationId])
+  @@index([status])
+  @@index([scheduledStartTime, scheduledEndTime])
+  @@index([accessCode])
+  @@map("exams")
+}
+
+model ExamSection {
+  id     String @id @default(uuid())
+  examId String
+  exam   Exam   @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  orderIndex  Int // Display order
+  duration    Int? // Section-specific duration in minutes
+
+  questions ExamQuestion[]
+
+  @@unique([examId, orderIndex])
+  @@index([examId])
+  @@map("exam_sections")
+}
+
+model ExamQuestion {
+  id         String   @id @default(uuid())
+  examId     String
+  exam       Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Restrict)
+
+  sectionId String?
+  section   ExamSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+
+  orderIndex  Int // Question order in exam
+  points      Float? // Override default question points
+  isMandatory Boolean @default(true)
+
+  // Relationships
+  responses Response[]
+
+  @@unique([examId, questionId])
+  @@index([examId])
+  @@index([questionId])
+  @@index([sectionId])
+  @@map("exam_questions")
+}
+
+model ExamAssignment {
+  id     String @id @default(uuid())
+  examId String
+  exam   Exam   @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  assignedAt DateTime  @default(now())
+  startTime  DateTime? // When student can start
+  endTime    DateTime? // When student must finish
+
+  // Override exam settings for specific student
+  extraTime     Int? // Additional minutes beyond exam duration
+  specialAccess Json? // Accessibility accommodations
+
+  @@unique([examId, studentId])
+  @@index([examId])
+  @@index([studentId])
+  @@map("exam_assignments")
+}
+
+// ============================================
+// EXAM ATTEMPT & RESPONSES
+// ============================================
 
 enum AttemptStatus {
   NOT_STARTED
   IN_PROGRESS
   SUBMITTED
+  AUTO_SUBMITTED
   GRADED
+  UNDER_REVIEW
+}
+
+model ExamAttempt {
+  id String @id @default(uuid())
+
+  examId String
+  exam   Exam   @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  attemptNumber Int           @default(1)
+  status        AttemptStatus @default(NOT_STARTED)
+
+  // Timing
+  startedAt   DateTime?
+  submittedAt DateTime?
+  timeSpent   Int? // Total time in seconds
+
+  // Scoring
+  score      Float?
+  maxScore   Float?
+  percentage Float?
+  isPassed   Boolean?
+
+  // Metadata
+  ipAddress         String?
+  userAgent         String?
+  deviceFingerprint String?
+
+  // Security & Integrity
+  securityFlags    Json? // Array of security violations
+  integrityScore   Float? // 0-100, calculated from proctoring data
+  flaggedForReview Boolean @default(false)
+  reviewNotes      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  responses          Response[]
+  proctoringSessions ProctoringSessions[]
+  evaluation         Evaluation?
+
+  @@unique([examId, studentId, attemptNumber])
+  @@index([examId])
+  @@index([studentId])
+  @@index([status])
+  @@map("exam_attempts")
+}
+
+model Response {
+  id String @id @default(uuid())
+
+  attemptId String
+  attempt   ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  examQuestionId String
+  examQuestion   ExamQuestion @relation(fields: [examQuestionId], references: [id], onDelete: Cascade)
+
+  // Response Data
+  answer          Json // Student's answer (structure varies by question type)
+  answerMediaUrls String[] // S3 URLs for uploaded files, scanned images, etc.
+
+  // Metadata
+  isMarkedForReview Boolean @default(false)
+  timeSpent         Int? // Time spent on this question in seconds
+  attemptCount      Int     @default(1) // How many times answered
+
+  // Scoring
+  isCorrect     Boolean? // Null for subjective questions
+  pointsAwarded Float?
+  feedback      String? // Evaluator feedback
+
+  // Timestamps
+  firstAnsweredAt DateTime?
+  lastAnsweredAt  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([attemptId, examQuestionId])
+  @@index([attemptId])
+  @@index([examQuestionId])
+  @@map("responses")
+}
+
+// ============================================
+// PROCTORING & MONITORING
+// ============================================
+
+enum ProctorEventType {
+  SESSION_START
+  SESSION_END
+  FACE_NOT_DETECTED
+  MULTIPLE_FACES
+  FACE_OBSCURED
+  LOOKING_AWAY
+  OBJECT_DETECTED
+  AUDIO_DETECTED
+  TAB_SWITCH
+  WINDOW_BLUR
+  FULLSCREEN_EXIT
+  COPY_PASTE
+  KEYBOARD_SHORTCUT
+  PROHIBITED_SOFTWARE
+  NETWORK_DISCONNECT
+  SUSPICIOUS_ACTIVITY
+  MANUAL_FLAG
+}
+
+enum ProctorSeverity {
+  INFO
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model ProctoringSessions {
+  id String @id @default(uuid())
+
+  attemptId String
+  attempt   ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  studentId String
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  // Session Info
+  sessionStartTime DateTime  @default(now())
+  sessionEndTime   DateTime?
+
+  // Media Storage
+  videoRecordingUrl  String? // S3 URL for full session recording
+  screenRecordingUrl String? // S3 URL for screen recording
+
+  // Summary Stats
+  totalFlags       Int    @default(0)
+  criticalFlags    Int    @default(0)
+  overallRiskScore Float? // 0-100
+
+  // Relationships
+  events    ProctorEvent[]
+  snapshots ProctorSnapshot[]
+
+  @@index([attemptId])
+  @@index([studentId])
+  @@map("proctoring_sessions")
+}
+
+model ProctorEvent {
+  id String @id @default(uuid())
+
+  sessionId String
+  session   ProctoringSessions @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  eventType ProctorEventType
+  severity  ProctorSeverity
+
+  timestamp DateTime @default(now())
+
+  // Event Details
+  description String?
+  metadata    Json? // Additional context (e.g., detected object, tab name)
+
+  // Media Evidence
+  snapshotUrl String? // S3 URL for screenshot/webcam capture
+
+  // AI Analysis
+  aiConfidence Float? // 0-1, confidence of AI detection
+
+  // Review
+  isReviewed      Boolean @default(false)
+  reviewedBy      String?
+  reviewNotes     String?
+  isFalsePositive Boolean @default(false)
+
+  @@index([sessionId])
+  @@index([eventType, severity])
+  @@index([timestamp])
+  @@map("proctoring_events")
+}
+
+model ProctorSnapshot {
+  id String @id @default(uuid())
+
+  sessionId String
+  session   ProctoringSessions @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  timestamp DateTime @default(now())
+
+  // Snapshot Data
+  webcamImageUrl String? // S3 URL
+  screenImageUrl String? // S3 URL
+
+  // AI Analysis Results
+  analysisResults Json? // Face detection, emotion, gaze direction, etc.
+
+  @@index([sessionId])
+  @@index([timestamp])
+  @@map("proctoring_snapshots")
+}
+
+// ============================================
+// EVALUATION & GRADING
+// ============================================
+
+enum EvaluationStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  REVIEWED
+}
+
+model Evaluation {
+  id String @id @default(uuid())
+
+  attemptId String      @unique
+  attempt   ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  evaluatorId String?
+  evaluator   User?   @relation(fields: [evaluatorId], references: [id], onDelete: SetNull)
+
+  status EvaluationStatus @default(PENDING)
+
+  // Anonymous Grading
+  isAnonymous Boolean @default(false)
+
+  // Scoring
+  totalScore    Float?
+  adjustedScore Float? // After manual adjustments
+
+  // Feedback
+  overallFeedback String?
+  privateNotes    String? // Internal notes, not visible to student
+
+  // Timing
+  assignedAt  DateTime  @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  @@index([attemptId])
+  @@index([evaluatorId])
+  @@index([status])
+  @@map("evaluations")
+}
+
+// ============================================
+// REPORTING & ANALYTICS
+// ============================================
+
+model ExamAnalytics {
+  id     String @id @default(uuid())
+  examId String @unique
+
+  // Participation Stats
+  totalAssigned  Int @default(0)
+  totalStarted   Int @default(0)
+  totalCompleted Int @default(0)
+
+  // Performance Stats
+  avgScore     Float?
+  medianScore  Float?
+  highestScore Float?
+  lowestScore  Float?
+  stdDeviation Float?
+
+  // Time Stats
+  avgTimeSpent Int? // In seconds
+
+  // Difficulty Metrics
+  avgDifficulty    Float? // Calculated from student performance
+  reliabilityIndex Float? // Cronbach's alpha
+
+  // Question Analysis (stored as JSON array)
+  questionStats Json? // Per-question statistics
+
+  lastCalculatedAt DateTime @default(now())
+
+  @@map("exam_analytics")
+}
+
+model StudentPerformanceReport {
+  id        String @id @default(uuid())
+  studentId String
+  examId    String
+
+  // Performance Metrics
+  score      Float
+  percentile Float?
+  rank       Int?
+
+  // Detailed Analysis
+  strengthAreas   String[]
+  weaknessAreas   String[]
+  recommendations String?
+
+  // Time Analysis
+  totalTimeSpent     Int
+  avgTimePerQuestion Float?
+
+  generatedAt DateTime @default(now())
+
+  @@unique([studentId, examId])
+  @@index([studentId])
+  @@index([examId])
+  @@map("student_performance_reports")
+}
+
+// ============================================
+// COMMUNICATION & NOTIFICATIONS
+// ============================================
+
+enum NotificationType {
+  EXAM_ASSIGNED
+  EXAM_REMINDER
+  EXAM_STARTED
+  EXAM_SUBMITTED
+  GRADE_PUBLISHED
+  PROCTORING_ALERT
+  SYSTEM_ALERT
+  MESSAGE
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model Notification {
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type     NotificationType
+  priority NotificationPriority @default(NORMAL)
+
+  title     String
+  message   String
+  actionUrl String?
+
+  isRead Boolean   @default(false)
+  readAt DateTime?
+
+  metadata Json?
+
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model ChatMessage {
+  id String @id @default(uuid())
+
+  senderId String
+  sender   User   @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  examId String? // If chat is exam-specific
+
+  message        String
+  attachmentUrls String[] // S3 URLs
+
+  isSystemMessage Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([senderId])
+  @@index([examId, createdAt])
+  @@map("chat_messages")
+}
+
+// ============================================
+// AUDIT & ACTIVITY LOGS
+// ============================================
+
+enum ActivityType {
+  USER_LOGIN
+  USER_LOGOUT
+  USER_CREATED
+  USER_UPDATED
+  USER_DELETED
+  EXAM_CREATED
+  EXAM_UPDATED
+  EXAM_DELETED
+  EXAM_PUBLISHED
+  EXAM_STARTED
+  EXAM_SUBMITTED
+  QUESTION_CREATED
+  QUESTION_UPDATED
+  QUESTION_DELETED
+  PROCTORING_FLAG
+  GRADE_PUBLISHED
+  EVALUATION_COMPLETED
+  SETTINGS_CHANGED
+  SECURITY_VIOLATION
+}
+
+model ActivityLog {
+  id String @id @default(uuid())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  activityType ActivityType
+
+  entityType String? // exam, question, user, etc.
+  entityId   String? // ID of the affected entity
+
+  description String
+  metadata    Json? // Additional context
+
+  ipAddress String?
+  userAgent String?
+
+  timestamp DateTime @default(now())
+
+  @@index([userId])
+  @@index([activityType])
+  @@index([timestamp])
+  @@index([entityType, entityId])
+  @@map("activity_logs")
+}
+
+// ============================================
+// SYSTEM CONFIGURATION
+// ============================================
+
+model SystemConfig {
+  id          String  @id @default(uuid())
+  key         String  @unique
+  value       Json
+  description String?
+
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+
+  @@map("system_config")
+}
+
+model FileUpload {
+  id String @id @default(uuid())
+
+  fileName     String
+  originalName String
+  mimeType     String
+  fileSize     Int // In bytes
+  s3Key        String @unique
+  s3Url        String
+
+  uploadedBy String?
+  entityType String? // question, response, proctoring, etc.
+  entityId   String?
+
+  uploadedAt DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([uploadedBy])
+  @@map("file_uploads")
 }

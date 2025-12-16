@@ -64,28 +64,31 @@ export class ProctoringGateway implements OnGatewayConnection, OnGatewayDisconne
       {
         clientId: client.id,
         eventType: payload.eventType,
-        examSessionId: payload.examSessionId
+        sessionId: payload.sessionId
       },
       'Proctoring event ingested'
     );
 
     void this.proctoringService.ingestEvent({
-      examSessionId: payload.examSessionId,
       eventType: payload.eventType,
-      payload: payload.payload
+      sessionId: payload.sessionId,
+      severity: payload.severity,
+      description: payload.description,
+      metadata: payload.metadata,
+      snapshotUrl: payload.snapshotUrl
     });
     void this.socketLogService.log({
       eventType: payload.eventType,
       socketId: client.id,
-      payload: payload.payload
+      payload: payload.metadata
     });
 
-    (client.data as { lastSessionId?: string }).lastSessionId = payload.examSessionId;
-    this.updateStatus(payload.examSessionId, {
+    (client.data as { lastSessionId?: string }).lastSessionId = payload.sessionId;
+    this.updateStatus(payload.sessionId, {
       cameraActive: payload.eventType.includes('webcam'),
       micActive: payload.eventType.includes('audio'),
       screenActive: payload.eventType.includes('screen'),
-      flags: (payload.payload as { flags?: string[] } | undefined)?.flags,
+      flags: (payload.metadata as { flags?: string[] } | undefined)?.flags,
       online: true
     });
 
@@ -93,10 +96,10 @@ export class ProctoringGateway implements OnGatewayConnection, OnGatewayDisconne
   }
 
   private updateStatus(
-    examSessionId: string,
+    sessionId: string,
     updates: Partial<{ cameraActive: boolean; micActive: boolean; screenActive: boolean; flags: string[]; online: boolean }>
   ) {
-    const current = this.sessionStatus.get(examSessionId) ?? {
+    const current = this.sessionStatus.get(sessionId) ?? {
       cameraActive: false,
       micActive: false,
       screenActive: false,
@@ -111,12 +114,12 @@ export class ProctoringGateway implements OnGatewayConnection, OnGatewayDisconne
     if (updates.flags) {
       next.flags = updates.flags;
     }
-    this.sessionStatus.set(examSessionId, next);
-    this.broadcastStatus(examSessionId, next);
+    this.sessionStatus.set(sessionId, next);
+    this.broadcastStatus(sessionId, next);
   }
 
   private broadcastStatus(
-    examSessionId: string,
+    sessionId: string,
     status: {
       cameraActive: boolean;
       micActive: boolean;
@@ -126,8 +129,8 @@ export class ProctoringGateway implements OnGatewayConnection, OnGatewayDisconne
       lastEventAt?: number;
     }
   ) {
-    this.logger.debug({ examSessionId, status }, 'Proctoring status update');
-    void this.socketLogService.log({ eventType: 'proctoring.status', socketId: 'broadcast', payload: { examSessionId, status } });
-    (this as any).server?.emit('proctoring:status', { examSessionId, ...status });
+    this.logger.debug({ sessionId, status }, 'Proctoring status update');
+    void this.socketLogService.log({ eventType: 'proctoring.status', socketId: 'broadcast', payload: { sessionId, status } });
+    (this as any).server?.emit('proctoring:status', { sessionId, ...status });
   }
 }

@@ -5,7 +5,7 @@ import { CreateExamSessionDto, JoinExamSessionDto } from './dto/exam-session.dto
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { Role } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 
 @Controller('exam-sessions')
 export class ExamSessionsController {
@@ -13,16 +13,24 @@ export class ExamSessionsController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN, Role.TEACHER)
-  create(@Body() dto: CreateExamSessionDto) {
-    this.logger.log({ examId: dto.examId, candidateId: dto.candidateId }, 'Creating exam session');
-    return this.sessionsService.createSession(dto);
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
+  create(@Body() dto: CreateExamSessionDto, @Req() req: any) {
+    this.logger.log({ examId: dto.examId, studentId: dto.studentId }, 'Creating exam session');
+    return this.sessionsService.createSession({
+      ...dto,
+      clientIp: dto.clientIp ?? req.ip,
+      userAgent: dto.userAgent ?? req.headers['user-agent']
+    });
   }
 
   @Post('join')
-  join(@Body() dto: JoinExamSessionDto) {
+  join(@Body() dto: JoinExamSessionDto, @Req() req: any) {
     this.logger.log({ examKey: dto.examKey }, 'Exam session join attempt');
-    return this.sessionsService.joinWithKey(dto);
+    return this.sessionsService.joinWithKey({
+      ...dto,
+      clientIp: dto.clientIp ?? req.ip,
+      userAgent: dto.userAgent ?? req.headers['user-agent']
+    });
   }
 
   @Get('assigned')

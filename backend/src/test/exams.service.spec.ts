@@ -15,7 +15,10 @@ describe('ExamsService', () => {
         findUnique: jest.fn()
       }
     };
-    const service = new ExamsService(createLoggerMock() as any, prismaMock as any);
+    const storageMock = {
+      generateUploadUrl: jest.fn()
+    };
+    const service = new ExamsService(createLoggerMock() as any, prismaMock as any, storageMock as any);
 
     const result = service.gradeExam({
       answers: [

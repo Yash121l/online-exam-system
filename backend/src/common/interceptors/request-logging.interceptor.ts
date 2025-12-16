@@ -6,11 +6,11 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { tap } from 'rxjs/operators';
-import { PrismaService } from '../../prisma/prisma.service';
+import { Logger } from 'nestjs-pino';
 
 @Injectable()
 export class RequestLoggingInterceptor implements NestInterceptor {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly logger: Logger) {}
 
   intercept(context: ExecutionContext, next: CallHandler) {
     const now = Date.now();
@@ -20,23 +20,20 @@ export class RequestLoggingInterceptor implements NestInterceptor {
     const userId = (req as any).user?.userId ?? (req.headers['x-user-id'] as string | undefined);
 
     return next.handle().pipe(
-      tap(async () => {
+      tap(() => {
         const durationMs = Date.now() - now;
-        try {
-          await this.prisma.requestLog.create({
-            data: {
-              method: req.method,
-              path: req.url,
-              statusCode: res.statusCode,
-              durationMs,
-              userId,
-              ip: req.ip,
-              userAgent: req.headers['user-agent'] ?? undefined
-            }
-          });
-        } catch (error) {
-          // Swallow logging errors to avoid impacting responses
-        }
+        this.logger.debug(
+          {
+            method: req.method,
+            path: req.url,
+            statusCode: res.statusCode,
+            durationMs,
+            userId,
+            ip: req.ip,
+            userAgent: req.headers['user-agent']
+          },
+          'Request completed'
+        );
       })
     );
   }

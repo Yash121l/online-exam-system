@@ -1,25 +1,22 @@
-import { IsBoolean, IsDateString, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsDateString, IsEnum, IsNumber, IsOptional } from 'class-validator';
+import { ExamStatus } from '@prisma/client';
 
 export class ScheduleExamDto {
   @IsOptional()
   @IsDateString()
-  windowStart?: string;
+  scheduledStartTime?: string;
 
   @IsOptional()
   @IsDateString()
-  windowEnd?: string;
+  scheduledEndTime?: string;
 
   @IsOptional()
-  @IsString()
-  navigation?: string;
+  @IsNumber()
+  duration?: number;
 
   @IsOptional()
-  @IsBoolean()
-  randomizeQuestions?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  randomizeOptions?: boolean;
+  @IsEnum(ExamStatus)
+  status?: ExamStatus;
 }
 
 export class PublishExamDto {

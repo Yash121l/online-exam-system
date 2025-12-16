@@ -1,22 +1,41 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsOptional, IsString } from 'class-validator';
 
 export class CreateExamSessionDto {
   @IsString()
-  examId: string;
+  examId!: string;
 
   @IsString()
-  candidateName: string;
+  studentId!: string;
+
+  @IsOptional()
+  @IsDateString()
+  startTime?: string;
+
+  @IsOptional()
+  @IsDateString()
+  endTime?: string;
 
   @IsOptional()
   @IsString()
-  candidateId?: string;
+  clientIp?: string;
+
+  @IsOptional()
+  @IsString()
+  userAgent?: string;
 }
 
 export class JoinExamSessionDto {
   @IsString()
-  examKey: string;
+  examKey!: string;
+
+  @IsString()
+  studentId!: string;
 
   @IsOptional()
   @IsString()
-  candidateName?: string;
+  clientIp?: string;
+
+  @IsOptional()
+  @IsString()
+  userAgent?: string;
 }

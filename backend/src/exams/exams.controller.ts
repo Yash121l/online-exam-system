@@ -6,8 +6,13 @@ import { ExamsService } from './exams.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
-import { Role } from '@prisma/client';
-import { CreateQuestionBankItemDto, UpdateQuestionBankItemDto } from './dto/question-bank.dto';
+import { UserRole } from '@prisma/client';
+import {
+  CreateQuestionDto,
+  UpdateQuestionDto,
+  CreateQuestionBankDto,
+  UpdateQuestionBankDto
+} from './dto/question-bank.dto';
 import { ExamQuestionDto } from './dto/question.dto';
 import { ScheduleExamDto, PublishExamDto } from './dto/scheduling.dto';
 import { RequestPdfImportDto, TagPdfRegionsDto } from './dto/pdf-import.dto';
@@ -18,7 +23,7 @@ export class ExamsController {
   constructor(private readonly examsService: ExamsService, private readonly logger: Logger) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.TEACHER)
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
   async createExam(@Body() dto: CreateExamDto) {
     const exam = await this.examsService.createExam(dto);
     this.logger.log({ examId: exam.id }, 'Exam created via API');
@@ -26,13 +31,13 @@ export class ExamsController {
   }
 
   @Post(':id/schedule')
-  @Roles(Role.ADMIN, Role.TEACHER)
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
   scheduleExam(@Param('id') id: string, @Body() dto: ScheduleExamDto) {
     return this.examsService.scheduleExam(id, dto);
   }
 
   @Post(':id/publish')
-  @Roles(Role.ADMIN, Role.TEACHER)
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
   publishExam(@Param('id') id: string, @Body() dto: PublishExamDto) {
     return this.examsService.publishExam(id, dto);
   }
@@ -53,39 +58,57 @@ export class ExamsController {
     return exam;
   }
 
-  @Get('question-bank/items')
-  @Roles(Role.ADMIN, Role.TEACHER, Role.EVALUATOR)
+  @Get('question-banks')
+  @Roles(UserRole.ADMIN, UserRole.TEACHER, UserRole.EVALUATOR)
   getQuestionBank() {
-    return this.examsService.listQuestionBank();
+    return this.examsService.listQuestionBanks();
   }
 
-  @Post('question-bank/items')
-  @Roles(Role.ADMIN, Role.TEACHER)
-  createBankItem(@Body() dto: CreateQuestionBankItemDto) {
-    return this.examsService.createBankItem(dto);
+  @Post('question-banks')
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
+  createQuestionBank(@Body() dto: CreateQuestionBankDto) {
+    return this.examsService.createQuestionBank(dto);
   }
 
-  @Patch('question-bank/items/:id')
-  @Roles(Role.ADMIN, Role.TEACHER)
-  updateBankItem(@Param('id') id: string, @Body() dto: UpdateQuestionBankItemDto) {
-    return this.examsService.updateBankItem(id, dto);
+  @Patch('question-banks/:id')
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
+  updateQuestionBank(@Param('id') id: string, @Body() dto: UpdateQuestionBankDto) {
+    return this.examsService.updateQuestionBank(id, dto);
   }
 
-  @Delete('question-bank/items/:id')
-  @Roles(Role.ADMIN, Role.TEACHER)
-  deleteBankItem(@Param('id') id: string) {
-    return this.examsService.deleteBankItem(id);
+  @Delete('question-banks/:id')
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
+  deleteQuestionBank(@Param('id') id: string) {
+    return this.examsService.deleteQuestionBank(id);
+  }
+
+  @Post('question-banks/:bankId/questions')
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
+  createQuestion(@Param('bankId') bankId: string, @Body() dto: CreateQuestionDto) {
+    return this.examsService.createQuestion({ ...dto, questionBankId: bankId });
+  }
+
+  @Patch('questions/:questionId')
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
+  updateQuestionContent(@Param('questionId') questionId: string, @Body() dto: UpdateQuestionDto) {
+    return this.examsService.updateQuestion(questionId, dto);
+  }
+
+  @Delete('questions/:questionId')
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
+  deleteQuestion(@Param('questionId') questionId: string) {
+    return this.examsService.deleteQuestion(questionId);
   }
 
   @Post(':id/questions')
-  @Roles(Role.ADMIN, Role.TEACHER)
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
   addQuestion(@Param('id') id: string, @Body() dto: ExamQuestionDto) {
     return this.examsService.addExamQuestion(id, dto);
   }
 
   @Patch(':id/questions/:questionId')
-  @Roles(Role.ADMIN, Role.TEACHER)
-  updateQuestion(
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
+  updateExamQuestion(
     @Param('id') id: string,
     @Param('questionId') questionId: string,
     @Body() dto: ExamQuestionDto
@@ -94,20 +117,20 @@ export class ExamsController {
   }
 
   @Delete(':id/questions/:questionId')
-  @Roles(Role.ADMIN, Role.TEACHER)
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
   removeQuestion(@Param('id') id: string, @Param('questionId') questionId: string) {
     return this.examsService.deleteExamQuestion(id, questionId);
   }
 
   @Post('pdf-import/request')
-  @Roles(Role.ADMIN, Role.TEACHER)
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
   requestPdf(@Body() dto: RequestPdfImportDto) {
     return this.examsService.requestPdfImport(dto);
   }
 
-  @Patch('pdf-import/:importId/regions')
-  @Roles(Role.ADMIN, Role.TEACHER)
-  tagRegions(@Param('importId') importId: string, @Body() dto: TagPdfRegionsDto) {
-    return this.examsService.tagPdfRegions(importId, dto);
+  @Patch('pdf-import/:examId/regions')
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
+  tagRegions(@Param('examId') examId: string, @Body() dto: TagPdfRegionsDto) {
+    return this.examsService.tagPdfRegions(examId, dto);
   }
 }

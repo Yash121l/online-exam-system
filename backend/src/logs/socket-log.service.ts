@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { ActivityType, Prisma } from '@prisma/client';
+import { Logger } from 'nestjs-pino';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class SocketLogService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly logger: Logger) {}
 
   async log(event: {
     eventType: string;
@@ -12,13 +13,19 @@ export class SocketLogService {
     userId?: string;
     payload?: Record<string, unknown>;
   }) {
-    return this.prisma.socketEventLog.create({
-      data: {
-        eventType: event.eventType,
-        socketId: event.socketId,
-        userId: event.userId,
-        payload: event.payload as Prisma.InputJsonValue
-      }
-    });
+    try {
+      await this.prisma.activityLog.create({
+        data: {
+          activityType: ActivityType.SECURITY_VIOLATION,
+          description: event.eventType,
+          entityType: 'socket_event',
+          entityId: event.socketId,
+          userId: event.userId,
+          metadata: event.payload as Prisma.InputJsonValue
+        }
+      });
+    } catch (error) {
+      this.logger.warn({ err: error, eventType: event.eventType }, 'Failed to persist socket log');
+    }
   }
 }

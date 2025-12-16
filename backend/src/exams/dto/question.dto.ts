@@ -1,26 +1,21 @@
-import { QuestionType } from '@prisma/client';
-import { IsEnum, IsObject, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class ExamQuestionDto {
   @IsString()
-  prompt!: string;
-
-  @IsEnum(QuestionType)
-  type!: QuestionType;
-
-  @IsOptional()
-  @IsObject()
-  options?: Record<string, unknown>;
-
-  @IsOptional()
-  @IsObject()
-  answerKey?: Record<string, unknown>;
+  questionId!: string;
 
   @IsOptional()
   @IsString()
-  mediaKey?: string;
+  sectionId?: string;
+
+  @IsNumber()
+  orderIndex!: number;
 
   @IsOptional()
-  @IsString()
-  bankItemId?: string;
+  @IsNumber()
+  points?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isMandatory?: boolean;
 }

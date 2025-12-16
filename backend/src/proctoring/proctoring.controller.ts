@@ -15,7 +15,7 @@ export class ProctoringController {
   ingestFrame(@Body() payload: StreamPayload) {
     this.logger.log(
       {
-        examSessionId: payload.examSessionId,
+        sessionId: payload.sessionId,
         frameType: payload.frameType,
         sequence: payload.sequence
       },
@@ -26,25 +26,25 @@ export class ProctoringController {
   }
 
   @Post('ingest/analytics')
-  ingestAnalytics(@Body() payload: { examSessionId: string; flags: string[] }) {
+  ingestAnalytics(@Body() payload: { sessionId: string; flags: string[] }) {
     this.logger.warn(
       {
-        examSessionId: payload.examSessionId,
+        sessionId: payload.sessionId,
         flags: payload.flags
       },
       'Analytics flags received'
     );
-    void this.streamProcessingService.handleAnalytics(payload);
+    void this.streamProcessingService.handleAnalytics({ sessionId: payload.sessionId, flags: payload.flags });
     return { received: true, ts: Date.now(), queued: true };
   }
 
-  @Get('sessions/:examSessionId/flags')
-  listFlags(@Param('examSessionId') examSessionId: string) {
-    return this.proctoringService.getRecentFlags(examSessionId);
+  @Get('sessions/:sessionId/flags')
+  listFlags(@Param('sessionId') sessionId: string) {
+    return this.proctoringService.getRecentFlags(sessionId);
   }
 
-  @Get('sessions/:examSessionId/summary')
-  getSummary(@Param('examSessionId') examSessionId: string) {
-    return this.proctoringService.getLatestSummary(examSessionId);
+  @Get('sessions/:sessionId/summary')
+  getSummary(@Param('sessionId') sessionId: string) {
+    return this.proctoringService.getLatestSummary(sessionId);
   }
 }

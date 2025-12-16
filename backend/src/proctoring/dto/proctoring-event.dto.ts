@@ -1,17 +1,30 @@
-import { IsNumber, IsObject, IsOptional, IsString } from 'class-validator';
+import { ProctorEventType, ProctorSeverity } from '@prisma/client';
+import { IsEnum, IsNumber, IsObject, IsOptional, IsString } from 'class-validator';
 
 export class ProctoringEventDto {
-  @IsString()
-  eventType: string;
+  @IsEnum(ProctorEventType)
+  eventType!: ProctorEventType;
+
+  @IsOptional()
+  @IsEnum(ProctorSeverity)
+  severity?: ProctorSeverity;
 
   @IsString()
-  examSessionId: string;
+  sessionId!: string;
 
   @IsOptional()
   @IsNumber()
   timestamp?: number;
 
   @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
   @IsObject()
-  payload?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+
+  @IsOptional()
+  @IsString()
+  snapshotUrl?: string;
 }

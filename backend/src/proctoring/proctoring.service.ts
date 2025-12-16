@@ -1,65 +1,112 @@
-import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma, ProctorEventType, ProctorSeverity } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ProctoringService {
   constructor(private readonly prisma: PrismaService) {}
 
-  ingestEvent(data: { examSessionId: string; eventType: string; payload?: Record<string, unknown> }) {
-    return this.prisma.proctoringEvent.create({
+  async ingestEvent(data: {
+    sessionId: string;
+    eventType: ProctorEventType;
+    severity?: ProctorSeverity;
+    description?: string;
+    metadata?: Record<string, unknown>;
+    snapshotUrl?: string;
+    aiConfidence?: number;
+  }) {
+    await this.ensureSessionExists(data.sessionId);
+    return this.prisma.proctorEvent.create({
       data: {
-        examSessionId: data.examSessionId,
+        sessionId: data.sessionId,
         eventType: data.eventType,
-        payload: data.payload as Prisma.InputJsonValue
+        severity: data.severity ?? ProctorSeverity.MEDIUM,
+        description: data.description,
+        metadata: data.metadata as Prisma.InputJsonValue,
+        snapshotUrl: data.snapshotUrl,
+        aiConfidence: data.aiConfidence
       }
     });
   }
 
-  ingestAnalytics(data: { examSessionId: string; flags: string[] }) {
-    return this.prisma.proctoringEvent.create({
+  async ingestAnalytics(data: { sessionId: string; flags: string[] }) {
+    await this.ensureSessionExists(data.sessionId);
+    await this.prisma.proctoringSessions.update({
+      where: { id: data.sessionId },
       data: {
-        examSessionId: data.examSessionId,
-        eventType: 'analytics.flags',
-        payload: { flags: data.flags } as Prisma.InputJsonValue
+        totalFlags: { increment: data.flags.length },
+        criticalFlags: {
+          increment: data.flags.filter((flag) => flag.toLowerCase().includes('critical')).length
+        }
       }
     });
-  }
-
-  ingestSummary(data: { examSessionId: string; summary: Record<string, unknown> }) {
-    return this.prisma.proctoringEvent.create({
+    return this.prisma.proctorEvent.create({
       data: {
-        examSessionId: data.examSessionId,
-        eventType: 'analytics.summary',
-        payload: data.summary as Prisma.InputJsonValue
+        sessionId: data.sessionId,
+        eventType: ProctorEventType.SUSPICIOUS_ACTIVITY,
+        severity: ProctorSeverity.MEDIUM,
+        metadata: { flags: data.flags } as Prisma.InputJsonValue
       }
     });
   }
 
-  async getRecentFlags(examSessionId: string) {
-    const rows = await this.prisma.proctoringEvent.findMany({
-      where: { examSessionId, eventType: 'analytics.flags' },
-      orderBy: { createdAt: 'desc' },
+  async ingestSummary(data: { sessionId: string; summary: Record<string, unknown> }) {
+    await this.ensureSessionExists(data.sessionId);
+    const riskScore =
+      typeof data.summary?.['riskScore'] === 'number'
+        ? (data.summary as { riskScore?: number }).riskScore
+        : undefined;
+
+    await this.prisma.proctoringSessions.update({
+      where: { id: data.sessionId },
+      data: {
+        overallRiskScore: riskScore,
+        totalFlags: (data.summary as { totalFlags?: number }).totalFlags,
+        criticalFlags: (data.summary as { criticalFlags?: number }).criticalFlags
+      }
+    });
+
+    return this.prisma.proctorEvent.create({
+      data: {
+        sessionId: data.sessionId,
+        eventType: ProctorEventType.SESSION_END,
+        severity: ProctorSeverity.INFO,
+        metadata: data.summary as Prisma.InputJsonValue
+      }
+    });
+  }
+
+  async getRecentFlags(sessionId: string) {
+    await this.ensureSessionExists(sessionId);
+    const rows = await this.prisma.proctorEvent.findMany({
+      where: {
+        sessionId,
+        eventType: { in: [ProctorEventType.SUSPICIOUS_ACTIVITY, ProctorEventType.MANUAL_FLAG] }
+      },
+      orderBy: { timestamp: 'desc' },
       take: 20
     });
     return rows.map((row) => ({
       id: row.id,
-      createdAt: row.createdAt,
-      flags: (row.payload as { flags?: string[] })?.flags ?? []
+      createdAt: row.timestamp,
+      flags: (row.metadata as { flags?: string[] } | undefined)?.flags ?? [],
+      severity: row.severity
     }));
   }
 
-  async getLatestSummary(examSessionId: string) {
-    const row = await this.prisma.proctoringEvent.findFirst({
-      where: { examSessionId, eventType: 'analytics.summary' },
-      orderBy: { createdAt: 'desc' }
+  async getLatestSummary(sessionId: string) {
+    await this.ensureSessionExists(sessionId);
+    const session = await this.prisma.proctoringSessions.findUnique({
+      where: { id: sessionId }
     });
+    return session;
+  }
 
-    if (!row) return null;
-    return {
-      id: row.id,
-      createdAt: row.createdAt,
-      summary: row.payload ?? {}
-    };
+  private async ensureSessionExists(sessionId: string) {
+    const session = await this.prisma.proctoringSessions.findUnique({ where: { id: sessionId } });
+    if (!session) {
+      throw new NotFoundException('Proctoring session not found');
+    }
+    return session;
   }
 }

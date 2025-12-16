@@ -32,7 +32,7 @@ export class MonitoringGateway implements OnGatewayConnection, OnGatewayDisconne
   }
 
   emitTileUpdate(payload: {
-    examSessionId: string;
+    sessionId: string;
     lastFrameType: 'webcam' | 'screen' | 'audio' | null;
     flags: string[];
     framesProcessed: number;
@@ -41,17 +41,17 @@ export class MonitoringGateway implements OnGatewayConnection, OnGatewayDisconne
     this.server.emit('monitoring:tile', payload);
   }
 
-  emitFlag(payload: { examSessionId: string; flags: string[]; at: number }) {
+  emitFlag(payload: { sessionId: string; flags: string[]; at: number }) {
     this.server.emit('monitoring:flag', payload);
   }
 
-  emitSummary(payload: { examSessionId: string; summary: Record<string, unknown> }) {
+  emitSummary(payload: { sessionId: string; summary: Record<string, unknown> }) {
     this.server.emit('monitoring:summary', payload);
   }
 
   @SubscribeMessage('chat:send')
   handleChatMessage(
-    @MessageBody() payload: { examSessionId: string; from: string; message: string },
+    @MessageBody() payload: { sessionId: string; from: string; message: string },
     @ConnectedSocket() client: Socket
   ) {
     this.logger.log({ ...payload, clientId: client.id }, 'Proctoring chat');
