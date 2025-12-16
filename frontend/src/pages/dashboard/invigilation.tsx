@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Layout } from '../../components/Layout';
+import { DashboardLayout } from '../../components/DashboardLayout';
 import { monitoringClient, MonitoringTile } from '../../lib/monitoring';
 import { getAuth } from '../../lib/api';
 import { Card, CardContent, CardHeader } from '../../components/ui/card';
@@ -12,7 +12,7 @@ export default function InvigilationDashboard() {
     Array<{ examSessionId: string; from: string; message: string; at: number }>
   >([]);
   const [message, setMessage] = useState('');
-  const role = useMemo(() => getAuth()?.role ?? 'GUEST', []);
+  const role = useMemo(() => getAuth()?.user?.role ?? 'GUEST', []);
 
   useEffect(() => {
     monitoringClient.onTile((tile) => {
@@ -52,7 +52,7 @@ export default function InvigilationDashboard() {
   };
 
   return (
-    <Layout title="Live Invigilation">
+    <DashboardLayout title="Live Invigilation" subtitle="Monitor candidates in real-time">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Live invigilation</p>
@@ -138,6 +138,6 @@ export default function InvigilationDashboard() {
           </Card>
         </div>
       </div>
-    </Layout>
+    </DashboardLayout>
   );
 }

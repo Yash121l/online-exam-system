@@ -8,8 +8,9 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variantStyles: Record<NonNullable<ButtonProps['variant']>, string> = {
   primary: 'bg-gradient-to-r from-brand-900 to-brand-600 text-white shadow-card hover:opacity-95',
-  secondary: 'border border-slate-300 bg-white text-slate-900 hover:border-brand-500 hover:text-brand-700',
-  ghost: 'text-brand-700 hover:bg-slate-100'
+  secondary:
+    'border border-slate-300 bg-white text-slate-900 hover:border-brand-500 hover:text-brand-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:border-accent',
+  ghost: 'text-brand-700 hover:bg-slate-100 dark:text-neutral-100 dark:hover:bg-neutral-800'
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(

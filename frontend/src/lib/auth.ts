@@ -1,8 +1,13 @@
 type AuthPayload = {
   accessToken: string;
-  userId: string;
-  email: string;
-  role: string;
+  refreshToken?: string;
+  user: {
+    id: string;
+    email: string;
+    role: string;
+    firstName?: string | null;
+    lastName?: string | null;
+  };
 };
 
 const STORAGE_KEY = 'aegis.auth';

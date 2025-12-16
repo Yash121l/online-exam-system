@@ -3,171 +3,242 @@ import { Layout } from '../components/Layout';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 
-const featureCards = [
+const pillars = [
   {
-    title: 'Exam Builder',
-    body: 'Upload PDFs, mix question banks, randomize sections, and lock navigation per cohort.',
-    href: '/exams/builder'
+    title: 'Uncompromising Security',
+    icon: '🛡️',
+    items: ['Secure exam client with fullscreen lockdown', 'AI-assisted proctoring with live monitoring', 'Advanced cheat detection + audit logs'],
+    href: '/security'
   },
   {
-    title: 'AI-Assisted Proctoring',
-    body: 'Webcam, mic, and screen telemetry streamed from the secure Electron client with instant flags.',
-    href: '/dashboard/admin'
+    title: 'Intelligent Assessment',
+    icon: '🧠',
+    items: ['25+ question types with section rules', 'Auto-grading + manual review workflow', 'Advanced analytics and insights'],
+    href: '/features'
   },
   {
-    title: 'Evaluation & Reports',
-    body: 'Anonymous grading, rubric alignment, and exportable CSV/PDF performance reports.',
+    title: 'Seamless Experience',
+    icon: '✨',
+    items: ['Role-aware dashboards for every user', 'Electron client for high-stakes delivery', 'Accessibility built-in'],
+    href: '/dashboard/student'
+  },
+  {
+    title: 'Data-Driven Insights',
+    icon: '📊',
+    items: ['Comprehensive reporting', 'Performance + difficulty analysis', 'CSV/PDF/Excel exports'],
     href: '/dashboard/admin'
   }
 ];
 
-const adminFlow = [
-  'Register as admin/teacher and invite evaluators.',
-  'Build exams with PDF import, question pools, and section timers.',
-  'Distribute exam keys and publish the secure-client download.',
-  'Monitor live tiles, chat with students, and triage AI flags.',
-  'Close exams, auto-mark objective items, and export insights.'
+const useCases = ['Higher Education', 'K-12 Schools', 'Corporate Training & Certification', 'Professional Licensing'];
+
+const comparison = [
+  { feature: 'Secure lockdown client', aegis: 'Electron + deep link', mettl: 'Limited', examNet: 'Browser-only' },
+  { feature: 'AI proctoring flags', aegis: 'Real-time + audit log', mettl: 'Basic', examNet: 'Add-on' },
+  { feature: 'Question formats', aegis: '25+', mettl: '15+', examNet: '10+' },
+  { feature: 'Offline tolerance', aegis: 'Queue + replay', mettl: 'Limited', examNet: 'No' }
 ];
 
-const studentFlow = [
-  'Create a student account or use the delivered exam key.',
-  'Download the locked-down Electron client from the exam page.',
-  'Run device checks (camera/mic/screen) and enable offline sync.',
-  'Launch the exam via aegisexam:// deep link and stay in kiosk mode.',
-  'Submit responses; offline work resyncs automatically on reconnect.'
+const pricing = [
+  { name: 'STARTER', price: '$99/mo', bullets: ['Up to 50 students', '10 exams/mo', 'Basic proctoring', 'Standard support'] },
+  { name: 'GROWTH', price: '$299/mo', bullets: ['Up to 500 students', '100 exams/mo', 'AI-assisted proctoring', 'Priority support'] },
+  { name: 'ENTERPRISE', price: 'Custom', bullets: ['Unlimited students', 'Unlimited exams', 'Enterprise security', 'Dedicated success mgr'] }
 ];
 
 export default function Landing() {
   return (
     <Layout>
-      <section className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+      <section className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-5">
-          <p className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-brand-600">
-            Secure · Insightful · Exam ready
+          <p className="inline-flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-primary">
+            Secure · Intelligent · Uncompromising
           </p>
-          <h1 className="text-4xl font-bold leading-tight text-slate-900 md:text-5xl">
-            Deliver high-stakes exams with an AI-supervised, secure client
-          </h1>
-          <p className="text-lg text-slate-600">
-            AegisExam pairs a responsive Next.js portal with a kiosked Electron app so admins, evaluators, and students each get
-            the right experience—without compromising security or insight.
+          <h1 className="text-4xl font-bold leading-tight text-primary dark:text-neutral-50 md:text-5xl">Next-Generation Exam Platform</h1>
+          <p className="text-lg text-neutral-700 dark:text-neutral-200">
+            Secure. Intelligent. Fair. AI-powered proctoring meets seamless assessment for Higher Ed, K-12, and Corporate training.
           </p>
           <div className="flex flex-wrap gap-3">
             <Button asChild>
-              <Link href="/auth/register">Create account</Link>
+              <Link href="/auth/register">Start Free Trial</Link>
             </Button>
             <Button asChild variant="secondary">
-              <Link href="/exams/launch">Launch secure exam</Link>
+              <Link href="/features">Watch Demo</Link>
             </Button>
-            <Link className="text-sm font-semibold text-brand-700 underline" href="/exams/builder">
-              Explore exam builder
+            <Link className="text-sm font-semibold text-accent underline" href="/contact">
+              Schedule Consultation
             </Link>
           </div>
-          <div className="flex flex-wrap gap-2 text-sm font-semibold text-slate-700">
-            <span className="rounded-full bg-white px-3 py-1 shadow-card">25+ question formats</span>
-            <span className="rounded-full bg-white px-3 py-1 shadow-card">Offline-safe client</span>
-            <span className="rounded-full bg-white px-3 py-1 shadow-card">Real-time proctoring</span>
-            <span className="rounded-full bg-white px-3 py-1 shadow-card">Exports: CSV · PDF</span>
+          <div className="flex flex-wrap gap-2 text-sm font-semibold text-neutral-700 dark:text-neutral-200">
+            <span className="rounded-full bg-white px-3 py-1 shadow-card dark:bg-neutral-900">25+ question formats</span>
+            <span className="rounded-full bg-white px-3 py-1 shadow-card dark:bg-neutral-900">AI proctoring</span>
+            <span className="rounded-full bg-white px-3 py-1 shadow-card dark:bg-neutral-900">Offline resync</span>
+            <span className="rounded-full bg-white px-3 py-1 shadow-card dark:bg-neutral-900">Reports & exports</span>
           </div>
         </div>
 
-        <Card className="border-none bg-brand-900 text-slate-100 shadow-card">
-          <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+        <Card className="relative overflow-hidden border border-white/60 bg-gradient-to-br from-primary to-brand-700 text-white shadow-glass dark:border-neutral-800">
+          <div className="absolute inset-0 animate-[pulse_6s_ease-in-out_infinite] bg-gradient-to-br from-white/5 via-accent/10 to-white/5" />
+          <div className="relative flex items-center justify-between border-b border-white/10 px-5 py-4">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-brand-100">Live command center</p>
-              <p className="text-lg font-semibold">Proctoring signals</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-neutral-200">Live proctoring preview</p>
+              <p className="text-lg font-semibold">Real-time telemetry</p>
             </div>
-            <span className="rounded-full bg-emerald-500 px-3 py-1 text-xs font-semibold text-white">Healthy</span>
+            <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-white">Healthy</span>
           </div>
-          <div className="grid gap-4 px-5 py-4 md:grid-cols-2">
+          <div className="relative grid gap-4 px-5 py-4 md:grid-cols-2">
             <div>
-              <p className="text-sm text-brand-100">Active sessions</p>
-              <p className="text-3xl font-bold">42</p>
-              <p className="text-xs text-brand-100">12 flagged · 3 escalated</p>
+              <p className="text-sm text-neutral-200">Active sessions</p>
+              <p className="text-3xl font-bold">234</p>
+              <p className="text-xs text-neutral-200">42 flagged · 3 escalated</p>
             </div>
             <div>
-              <p className="text-sm text-brand-100">Telemetry</p>
+              <p className="text-sm text-neutral-200">Telemetry</p>
               <ul className="mt-1 space-y-1 text-sm">
-                <li>✔️ Focus locked · shortcuts blocked</li>
-                <li>✔️ Webcam + mic streaming</li>
-                <li>✔️ Offline queue empty</li>
+                <li>✔️ Focus shifts + shortcut blocks</li>
+                <li>✔️ Webcam, mic, and screen streams</li>
+                <li>✔️ Signed S3 uploads + offline queue</li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-white/10 px-5 py-4 text-sm text-brand-100">
-            Uses NestJS WebSockets for live proctoring and a dedicated /logs endpoint for immediate violation reports from the
-            Electron client.
+          <div className="relative border-t border-white/10 px-5 py-4 text-sm text-neutral-100">
+            AI-powered proctoring with live flags, secure Electron delivery, and offline cache with auto-resync.
           </div>
         </Card>
       </section>
 
-      <section className="mx-auto mt-10 grid max-w-6xl gap-4 md:grid-cols-3">
-        {featureCards.map((card) => (
-          <Card key={card.title} className="flex h-full flex-col gap-3 p-5 shadow-card">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">{card.title}</p>
-            <p className="text-sm text-slate-600">{card.body}</p>
-            <Link className="mt-auto text-sm font-semibold text-brand-700" href={card.href}>
-              View details
-            </Link>
-          </Card>
-        ))}
+      <section className="mx-auto mt-12 max-w-7xl rounded-3xl border border-white/60 bg-white/80 p-8 shadow-card backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/80">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">Features</p>
+            <h2 className="text-2xl font-bold text-primary dark:text-neutral-50">Security, intelligence, experience, insight</h2>
+          </div>
+          <Button asChild variant="secondary">
+            <Link href="/features">View detailed features</Link>
+          </Button>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {pillars.map((feature) => (
+            <Card key={feature.title} className="flex h-full flex-col gap-3 p-5 shadow-card">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary dark:text-neutral-100">
+                {feature.icon} {feature.title}
+              </p>
+              <ul className="space-y-2 text-sm text-neutral-700 dark:text-neutral-200">
+                {feature.items.map((item) => (
+                  <li key={item}>• {item}</li>
+                ))}
+              </ul>
+              <Link className="mt-auto text-sm font-semibold text-accent" href={feature.href}>
+                View details
+              </Link>
+            </Card>
+          ))}
+        </div>
       </section>
 
-      <section className="mx-auto mt-12 grid max-w-6xl gap-8 lg:grid-cols-2">
-        <Card className="p-5 shadow-card">
+      <section className="mx-auto mt-12 grid max-w-7xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <Card className="p-6 shadow-card">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-brand-600">Admin / Teacher flow</p>
-              <h3 className="mt-1 text-xl font-bold text-slate-900">Design, deliver, monitor</h3>
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">Use cases</p>
+              <h3 className="mt-1 text-xl font-bold text-primary dark:text-neutral-50">Built for every assessment team</h3>
             </div>
             <Button asChild variant="ghost">
-              <Link href="/dashboard/admin">Open dashboard</Link>
+              <Link href="/about">Why AegisExam</Link>
             </Button>
           </div>
-          <ol className="mt-4 space-y-3 text-sm text-slate-700">
-            {adminFlow.map((step, idx) => (
-              <li key={step} className="flex gap-3">
-                <span className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-600">
-                  {idx + 1}
-                </span>
-                <span>{step}</span>
-              </li>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {useCases.map((caseName) => (
+              <div key={caseName} className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm font-semibold text-primary dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100">
+                {caseName}
+              </div>
             ))}
-          </ol>
+          </div>
         </Card>
-
-        <Card className="p-5 shadow-card">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-brand-600">Student flow</p>
-              <h3 className="mt-1 text-xl font-bold text-slate-900">Secure, offline-ready</h3>
+          <Card className="p-6 shadow-card">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">Social proof</p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-neutral-200 bg-white px-4 py-3 shadow-sm">
+                <p className="text-3xl font-bold text-primary dark:text-neutral-50">12,453</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-neutral-600">Total users</p>
             </div>
-            <Button asChild variant="ghost">
-              <Link href="/dashboard/student">Open portal</Link>
-            </Button>
+            <div className="rounded-xl border border-neutral-200 bg-white px-4 py-3 shadow-sm">
+              <p className="text-3xl font-bold text-primary">1,289</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-neutral-600">Exams today</p>
+            </div>
           </div>
-          <ol className="mt-4 space-y-3 text-sm text-slate-700">
-            {studentFlow.map((step, idx) => (
-              <li key={step} className="flex gap-3">
-                <span className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">
-                  {idx + 1}
-                </span>
-                <span>{step}</span>
-              </li>
-            ))}
-          </ol>
+              <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold text-neutral-700 dark:text-neutral-200">
+                <span className="rounded-full bg-secondary/10 px-3 py-1 text-secondary">SOC 2 Ready</span>
+            <span className="rounded-full bg-accent/10 px-3 py-1 text-accent">GDPR aligned</span>
+            <span className="rounded-full bg-warning/10 px-3 py-1 text-warning">Accessibility-first</span>
+          </div>
         </Card>
       </section>
 
-      <section className="mx-auto mt-12 max-w-6xl rounded-2xl bg-gradient-to-r from-brand-900 via-brand-600 to-brand-500 px-6 py-7 text-slate-50 shadow-card">
-        <div className="grid gap-6 md:grid-cols-[1.2fr_0.8fr] md:items-center">
+      <section className="mx-auto mt-12 max-w-7xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">Comparison</p>
+            <h3 className="text-xl font-bold text-primary dark:text-neutral-50">How AegisExam compares</h3>
+          </div>
+          <Link className="text-sm font-semibold text-accent" href="/pricing">
+            View pricing
+          </Link>
+        </div>
+        <div className="mt-4 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-card dark:border-neutral-800 dark:bg-neutral-900">
+          <div className="grid grid-cols-[1.2fr_repeat(3,1fr)] bg-neutral-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.15em] text-primary">
+            <span>Feature</span>
+            <span>AegisExam</span>
+            <span>Mettl</span>
+            <span>Exam.net</span>
+          </div>
+          {comparison.map((row) => (
+            <div key={row.feature} className="grid grid-cols-[1.2fr_repeat(3,1fr)] border-t border-neutral-200 px-4 py-3 text-sm text-neutral-800 dark:border-neutral-800 dark:text-neutral-200">
+              <span className="font-semibold text-primary dark:text-neutral-100">{row.feature}</span>
+              <span>{row.aegis}</span>
+              <span>{row.mettl}</span>
+              <span>{row.examNet}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto mt-12 max-w-7xl">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">Pricing preview</p>
+            <h3 className="text-xl font-bold text-primary">Pick the plan that fits</h3>
+          </div>
+          <Button asChild variant="secondary">
+            <Link href="/pricing">View detailed pricing</Link>
+          </Button>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          {pricing.map((tier) => (
+            <Card key={tier.name} className="flex h-full flex-col justify-between border border-neutral-200 bg-white p-6 shadow-card dark:border-neutral-800 dark:bg-neutral-900">
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary dark:text-neutral-100">{tier.name}</p>
+                <p className="text-3xl font-bold text-primary dark:text-neutral-50">{tier.price}</p>
+                <ul className="mt-3 space-y-2 text-sm text-neutral-700 dark:text-neutral-200">
+                  {tier.bullets.map((item) => (
+                    <li key={item}>• {item}</li>
+                  ))}
+                </ul>
+              </div>
+              <Button asChild className="mt-6 w-full">
+                <Link href="/pricing">Choose plan</Link>
+              </Button>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto mt-14 max-w-7xl rounded-3xl bg-gradient-to-r from-primary via-brand-700 to-accent px-8 py-10 text-white shadow-card">
+        <div className="grid gap-6 md:grid-cols-[1.1fr_0.9fr] md:items-center">
           <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-brand-100">Secure exam client</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-neutral-200">Secure exam client</p>
             <h3 className="text-2xl font-bold">Electron-only delivery for high-stakes exams</h3>
-            <p className="text-sm text-brand-50">
-              Students must download the AegisExam secure app. When the exam page appears, they can trigger the launch button
-              to open <code className="rounded bg-black/30 px-1.5 py-0.5">aegisexam://</code> links that hand control to the
-              locked-down client.
+            <p className="text-sm text-neutral-100">
+              Students launch via <code className="rounded bg-black/30 px-1.5 py-0.5">aegisexam://</code> deep links. The client enforces fullscreen, blocks shortcuts, streams telemetry, and replays logs if offline.
             </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild>
@@ -180,7 +251,7 @@ export default function Landing() {
               </Button>
             </div>
           </div>
-          <Card className="bg-white/10 p-4 text-sm text-brand-50">
+          <Card className="bg-white/10 p-4 text-sm text-neutral-100">
             <p className="font-semibold text-white">What gets enforced</p>
             <ul className="mt-2 space-y-1">
               <li>• Fullscreen kiosk window with shortcut blocking</li>

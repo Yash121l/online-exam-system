@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700&family=JetBrains+Mono:wght@500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,5 +9,32 @@
 }
 
 body {
-  @apply bg-white text-slate-900 antialiased;
+  @apply bg-neutral-50 text-slate-900 antialiased transition-colors duration-200;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: 'Poppins', 'Inter', system-ui, sans-serif;
+}
+
+code,
+pre {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+::selection {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+.dark body {
+  @apply bg-neutral-900 text-neutral-50;
+}
+
+.dark .glass-surface {
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(20px);
 }
