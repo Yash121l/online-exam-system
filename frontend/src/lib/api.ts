@@ -2,6 +2,7 @@ import { config } from './config';
 import { clientLogger } from './logger';
 import { loadAuth, persistAuth } from './auth';
 import { ExamSession } from './types';
+import { identifyUser, resetAnalytics, track } from './analytics';
 
 let authToken: string | null = loadAuth()?.accessToken ?? null;
 
@@ -61,6 +62,12 @@ export async function createExam(payload: {
 
   const data = await res.json();
   clientLogger.info('Exam created from portal', { examId: data.id });
+  track('exam_created', {
+    exam_type: payload.examType,
+    proctoring_level: payload.proctoringLevel,
+    require_secure_client: payload.requireSecureClient,
+    duration_minutes: payload.duration
+  });
   return data;
 }
 
@@ -76,6 +83,11 @@ export async function scheduleExam(
   if (!res.ok) {
     throw new Error('Failed to schedule exam');
   }
+  track('exam_scheduled', {
+    navigation: payload.navigation,
+    randomize_questions: payload.randomizeQuestions,
+    randomize_options: payload.randomizeOptions
+  });
   return res.json();
 }
 
@@ -88,6 +100,7 @@ export async function publishExam(examId: string, published: boolean) {
   if (!res.ok) {
     throw new Error('Failed to publish exam');
   }
+  track('exam_published', { published });
   return res.json();
 }
 
@@ -117,6 +130,7 @@ export async function joinExamByKey(payload: { examKey: string; candidateName?: 
     headers: jsonHeaders(),
     body: JSON.stringify(payload)
   });
+  track('exam_join_attempted', { success: res.ok });
   if (!res.ok) {
     throw new Error('Invalid or expired exam key');
   }
@@ -146,6 +160,7 @@ export async function createQuestion(examId: string, payload: any) {
     body: JSON.stringify(payload)
   });
   if (!res.ok) throw new Error('Failed to create question');
+  track('question_added', { source: 'exam', type: payload?.type });
   return res.json();
 }
 
@@ -174,6 +189,7 @@ export async function createQuestionInBank(payload: {
     body: JSON.stringify(payload)
   });
   if (!res.ok) throw new Error('Failed to create question');
+  track('question_added', { source: 'question_bank', type: payload.type });
   return res.json();
 }
 
@@ -212,6 +228,8 @@ export async function registerUser(payload: { email: string; firstName: string; 
   const data = await res.json();
   persistAuth(data);
   setAuthToken(data.accessToken, data.user, data.refreshToken);
+  identifyUser(data.user);
+  track('user_signed_up', { role: data.user?.role ?? payload.role });
   return data;
 }
 
@@ -228,6 +246,8 @@ export async function login(payload: { email: string; password: string; remember
   const data = await res.json();
   persistAuth(data);
   setAuthToken(data.accessToken, data.user, data.refreshToken);
+  identifyUser(data.user);
+  track('user_logged_in', { role: data.user?.role, remembered: !!payload.remember });
   return data;
 }
 
@@ -238,4 +258,5 @@ export function getAuth() {
 export function logout() {
   setAuthToken(null);
   persistAuth(null);
+  resetAnalytics();
 }
